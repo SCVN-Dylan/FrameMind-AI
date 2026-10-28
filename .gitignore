@@ -1,0 +1,28 @@
+# --- Secrets ---
+.env
+.env.*
+!.env.example
+
+# --- Python (backend) ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# --- Node (frontend) ---
+node_modules/
+.next/
+out/
+
+# --- Local storage (user videos, frames, database) ---
+storage/videos/*
+storage/frames/*
+!storage/videos/.gitkeep
+!storage/frames/.gitkeep
+storage/*.db
+
+# --- OS / editors ---
+.DS_Store
+.vscode/
+.idea/
