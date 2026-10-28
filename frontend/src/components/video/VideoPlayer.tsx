@@ -3,31 +3,33 @@
 import { useLayoutEffect, useRef } from "react";
 
 import type { VideoPlayerApi } from "@/hooks/useVideoPlayer";
+import type { VideoSource } from "@/lib/types";
 
 type VideoPlayerProps = {
-  file: File;
+  source: VideoSource;
   player: Pick<VideoPlayerApi, "videoRef" | "events">;
 };
 
 /**
- * Plays a local video file using a browser object URL.
+ * Plays a local video file (browser object URL) or a video streamed from the backend.
  *
  * The object URL is created when the player becomes visible and revoked in the effect cleanup.
  * That cleanup runs when the file is replaced, when it is removed (unmount), and also when Next.js
  * hides this page with React <Activity> (Cache Components). On re-show we create a fresh URL and
  * resume from the last position, so memory is released while the user is on another page.
+ * Backend videos are streamed with HTTP range requests, so seeking works without downloading everything.
  */
-export default function VideoPlayer({ file, player }: VideoPlayerProps) {
+export default function VideoPlayer({ source, player }: VideoPlayerProps) {
   const { videoRef, events } = player;
-  const resumeRef = useRef<{ file: File | null; time: number }>({ file: null, time: 0 });
+  const resumeRef = useRef<{ source: VideoSource | null; time: number }>({ source: null, time: 0 });
 
   useLayoutEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    if (resumeRef.current.file !== file) resumeRef.current = { file, time: 0 };
+    if (resumeRef.current.source !== source) resumeRef.current = { source, time: 0 };
 
-    const url = URL.createObjectURL(file);
+    const url = source.kind === "file" ? URL.createObjectURL(source.file) : source.url;
     const resumeAt = resumeRef.current.time;
     const onLoaded = () => {
       if (resumeAt > 0 && Number.isFinite(video.duration) && resumeAt < video.duration) video.currentTime = resumeAt;
@@ -41,9 +43,9 @@ export default function VideoPlayer({ file, player }: VideoPlayerProps) {
       video.pause();
       video.removeAttribute("src");
       video.load();
-      URL.revokeObjectURL(url);
+      if (source.kind === "file") URL.revokeObjectURL(url);
     };
-  }, [file, videoRef]);
+  }, [source, videoRef]);
 
   return (
     <video

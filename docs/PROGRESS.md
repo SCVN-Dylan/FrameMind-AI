@@ -4,7 +4,7 @@ _Last updated: 2026-10-28_
 
 ## Current milestone
 
-**Analysis Settings (frontend):** complete. Builds on Milestone 03. Frontend only; no backend changes.
+**05 — Backend Video Processing & Storage:** complete (2026-10-28). Next: **06 — OpenAI Vision Integration**.
 
 ## Completed
 
@@ -77,32 +77,67 @@ _Last updated: 2026-10-28_
       `src/lib/types.ts`; logic in `src/lib/analysis.ts` (27 unit checks) and `src/hooks/useMatchedMoments.ts`
 - [x] Headless-Chrome end-to-end check: 72/72 scenarios passed
 
+### Milestone 05 — Backend video processing & storage (2026-10-28)
+
+- [x] Environment: Homebrew FFmpeg/FFprobe 9.0.2 installed; `backend/.venv` recreated with Python 3.12.16
+- [x] SQLite tables `videos`, `analysis_sessions`, `matching_pairs`, `extracted_media` (`app/db/models.py`); additive
+      `create_all`, SQLite foreign keys enabled
+- [x] `POST /api/videos`: raw-body streaming upload to `storage/videos/<uuid>.part`, 1 GB limit (Content-Length and
+      streamed bytes), extension + file-signature check, FFprobe metadata (duration, size, resolution, fps, codec,
+      container), first-frame decode check; partial/invalid files are always deleted; original name sanitised
+- [x] Video metadata + streaming with HTTP range (`/api/videos/{id}`, `/file`)
+- [x] Sessions CRUD; replacing a video deletes the session's extracted frames and prunes pairs that no longer fit;
+      unreferenced videos are deleted; shared videos are kept
+- [x] Pairs CRUD with the frontend's rules (timestamps within each video, start < end, clips 0.1–10 s, lengths may
+      differ, 50 ms duplicate tolerance); errors return the frontend's reason codes; client UUIDs make creates idempotent
+- [x] FFmpeg extraction: Single Frame (one JPEG per video at its own timestamp, last-frame fallback at the end of a
+      video) and Short Clip (ordered sequence per video, grid-anchored sampling at `CLIP_SAMPLE_FPS`, capped at
+      `CLIP_MAX_FRAMES`); exact source timestamps from `showinfo`; temp folder + rename; per-pair lock; global job
+      semaphore; timeouts; frames scaled to ≤ 1280 px wide
+- [x] Safe file serving: media/video ids only, paths resolved inside `storage/frames` / `storage/videos`
+- [x] Unified error body `{"error": {code, message, details}}`; CORS limited to the configured origin and used methods
+- [x] Startup cleanup of interrupted uploads/extractions
+- [x] Frontend: `lib/api.ts` (XHR upload with progress, typed endpoints, `ApiError`), `hooks/useSessionSync.ts`
+      (serialized session writes, pair diff sync, stale-result guards, retry + `online` retry, restore),
+      `?session=<id>` in the URL, upload status per video, per-pair save state, "New session"
+- [x] `ExtractedFramesPanel`: extract / re-extract the selected pair, side-by-side frames or two filmstrips, click a
+      frame to seek that video; Full Video shows "not available yet"
+- [x] History: real saved sessions (open / delete) above the Demo AI reports
+- [x] EN / VI / KO text for all new UI
+- [x] 41 backend tests pass (upload, invalid/oversized/corrupt files, metadata, sessions, both pair types, validation,
+      extraction, missing video/FFmpeg, restore, safe serving, cleanup, shared-video deletion)
+- [x] `tsc`, `npm run lint`, `npm run build` pass
+- [x] Headless Chrome run with real H.264 videos: upload both → frame pair 3 s ↔ 5 s extracted at exactly
+      00:03.000 / 00:05.000 → clip pair 2–4 s ↔ 6–11 s extracted as 16 / 40 frames → reload restores mode, pairs,
+      videos (12 s / 15 s, playable and seekable) and frames → VI/KO text → session listed in History; no page errors
+
 ## Pending
 
-- [ ] M1 — Video upload
-- [~] M2 — Side-by-side preview (frontend done with local files; switch to backend-served videos after M1)
-- [~] M3 — Timestamp matching (manual frame/clip pairs done in the frontend; not saved to the backend yet)
-- [ ] M4 — Frame extraction (FFmpeg)
-- [ ] M5 — AI frame comparison (OpenAI Vision)
-- [ ] M6 — Full analysis run
-- [ ] M7 — Feedback timeline
-- [ ] M8 — Export report
-- [ ] M9 — Polish
-- [ ] M10 — Buffer + demo
+Plan: [ROADMAP.md](ROADMAP.md) — 5/8 milestones done (01–05).
+
+- [ ] 06 — OpenAI Vision Integration
+- [ ] 07 — Real Feedback, History & Export
+- [ ] 08 — QA, Optimization & Hackathon Demo
 
 ## Known issues
 
-- **FFmpeg is not installed** on the dev machine. Health check reports `ffmpeg: false`. Install with `brew install ffmpeg` before M4.
-- **Python 3.9.6** (macOS system Python) is end-of-life. Everything works today, but upgrading to Python 3.11+ is recommended (`brew install python@3.12`, then recreate `backend/.venv`).
-- No git repository has been initialized yet.
-- `frontend/package-lock.json` had 24 corrupted entries (no version), which left packages such as `next` and
-  `has-symbols` empty. It was regenerated on 2026-10-28 from the same `package.json` ranges (Next 16.4.3, React 19.3.0).
-- Frame stepping assumes 30 fps; the browser cannot read a video's real frame rate. Fix once the backend reports it
-  via FFmpeg (M4).
-- All feedback, history and statistics are demo data until M5/M6.
-- Frame/clip pairs live only in memory: a page reload clears videos and pairs (File objects can't be persisted).
-- Whether a file plays depends on its codec: H.264/VP8/VP9/AV1 work; HEVC/ProRes .mov files often don't in Chrome.
+- Frame stepping in the browser still assumes 30 fps. The backend now stores the real fps (`videos.fps`), but the
+  player doesn't use it yet.
+- All AI feedback, dashboard statistics and the "Demo AI reports" list are sample data until Milestone 06/07.
+- Videos uploaded but never attached to a session (e.g. the session write failed and the tab was closed) stay in
+  `storage/videos/` as orphans. They are not auto-deleted.
+- Pair validation runs against the browser's durations in the UI and FFprobe's on the server; a pair at the very
+  last millisecond can be accepted locally but rejected by the server (shown as "Not saved").
+- Session names can be set through the API (`PATCH name`) but there is no rename field in the UI yet.
+- Variable-frame-rate sources are handled by timestamp-based selection, but were only tested with generated
+  constant-rate videos (H.264 MP4, VP9 WebM).
+- Whether a file plays in the browser depends on its codec: H.264/VP8/VP9/AV1 work; HEVC/ProRes .mov often don't
+  in Chrome (FFmpeg can still extract frames from them).
+- `frontend/package-lock.json` was regenerated on 2026-10-28 after corrupted entries (Next 16.4.3, React 19.3.0).
 
 ## Next task
 
-**M1 — Video upload (backend):** `POST /api/comparisons` accepting two video files (reference + current), saving them to `storage/videos/`, creating a `Comparison` table in SQLite, then wire `ComparisonWorkspace` to upload the selected files (add the call in `src/lib/api.ts`) and load the History page from the backend instead of `DEMO_HISTORY`.
+**06 — OpenAI Vision Integration:** add `services/ai/` that sends a pair's extracted frames (one image per video
+for Single Frame, the two ordered sequences for Short Clip) to the OpenAI vision model, asks for structured JSON
+(category, severity, evidence, reference/current timestamps, Unity fix), stores the result in SQLite, and replaces
+the Demo "Analyze" button with a real call. Needs `OPENAI_API_KEY` in `backend/.env`.

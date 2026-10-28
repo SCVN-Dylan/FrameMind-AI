@@ -1,24 +1,24 @@
-# Roadmap — 14-day MVP
+# Roadmap — MVP (8 milestones)
 
 Each milestone ends with something you can test by hand. Don't start the next milestone until the current one's "Done when" passes.
 
-| Day | Milestone | Done when |
-| --- | --- | --- |
-| 1 | **M0 — Project setup** | Frontend shows "FrameMind AI"; `/api/health` returns `ok`; tests pass |
-| 2–3 | **M1 — Video upload** | You can upload a Reference and a Current video; files appear in `storage/videos/`; a `comparison` row exists in SQLite; `GET /api/comparisons/{id}` returns both videos |
-| 4 | **M2 — Side-by-side preview** | Comparison page plays both videos next to each other, with play/pause and per-video scrubbing |
-| 5 | **M3 — Timestamp matching** | You can mark pairs (Reference time ↔ Current time), see them in a list, delete them; pairs are saved and survive a page reload |
-| 6 | **M4 — Frame extraction** | For each pair, FFmpeg writes two JPGs to `storage/frames/{comparison_id}/`; the UI shows the frame thumbnails |
-| 7–8 | **M5 — AI frame comparison** | Clicking "Analyze" sends one frame pair to OpenAI Vision and returns structured JSON (category, severity, description, Unity fix); result stored in SQLite |
-| 9 | **M6 — Full analysis run** | "Analyze all" processes every pair, shows progress, handles errors per pair without crashing |
-| 10–11 | **M7 — Feedback timeline** | Feedback shown on a timeline; clicking an item seeks both videos to that moment; filter by category (camera, layout, lighting, color, animation, VFX) |
-| 12 | **M8 — Export report** | "Export" downloads a Markdown (and JSON) report with timestamps, frame images and fixes |
-| 13 | **M9 — Polish** | Loading/empty/error states, file size/type validation, clear error messages |
-| 14 | **M10 — Buffer + demo** | End-to-end run with real Unity clips; README updated; known issues listed |
+Milestones 01–05 are complete (5/8). Days for 05–08 count from the start of Milestone 05.
+
+| Days | Milestone | Status | Done when |
+| --- | --- | --- | --- |
+| — | **01 — Project Setup** | ✅ Done | Next.js 16, FastAPI, SQLite, project layout, env config; website loads and `/api/health` returns `ok` |
+| — | **02 — Frontend UI** | ✅ Done | Dark-mode Dashboard, New Analysis, History, Settings, Feedback Panel, Timeline, EN/VI/KR languages; pages navigate with demo data |
+| — | **03 — Video Upload & Timestamp Matching** | ✅ Done (frontend) | Two videos load and play with independent controls; the same gameplay event is matched at two different timestamps; clicking a pair seeks each video to its own time; timeline markers |
+| — | **04 — Analysis Settings UI** | ✅ Done (chosen scope) | Single Frame, Short Clip with manual Start/End, Full Video (Future); the analysed range is shown on the timeline |
+| 1–3 | **05 — Backend Video Processing & Storage** | ✅ Done | Real upload saves both videos to `storage/videos/`; FFprobe metadata (duration, resolution, fps) is stored; SQLite keeps sessions and frame/clip pairs, so a page reload restores metadata and pairs; FFmpeg extracts frames and clip frame sequences at the right timestamps into `storage/frames/` |
+| 4–6 | **06 — OpenAI Vision Integration** | ⬜ Next | Frames / frame sequences from both videos are sent to OpenAI Vision; the response is structured JSON with differences, evidence, severity, timestamps and Unity fix suggestions; results are stored in SQLite. Checked with a video pair that has an obvious difference |
+| 7–8 | **07 — Real Feedback, History & Export** | ⬜ | Demo data is replaced by real AI results; History lists saved sessions and reopening one shows its feedback; clicking feedback seeks the videos; Markdown and JSON reports export successfully |
+| 9–10 | **08 — QA, Optimization & Hackathon Demo** | ⬜ | Tested with real gameplay video pairs; API speed/cost tuned; bugs fixed; full flow upload → choose mode → analyze → review → export runs end to end for the demo |
 
 ## Scope guardrails (not in MVP)
 
 - Automatic video synchronization / scene matching
+- Automatic 2-second clip around a marked moment (Short Clip uses manual Start/End)
 - User accounts, multi-user, cloud hosting
 - Background job queues (Redis, Celery), Docker, PostgreSQL
 - Video editing or annotation drawing

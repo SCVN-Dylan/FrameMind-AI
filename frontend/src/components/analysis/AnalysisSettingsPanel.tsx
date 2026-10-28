@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
 import Icon, { type IconName } from "@/components/ui/Icon";
 import type { MatchedMomentsApi } from "@/hooks/useMatchedMoments";
+import type { MomentSaveStatus } from "@/hooks/useSessionSync";
+import type { ApiError } from "@/lib/api";
 import { modeKind, type AnalysisTargetResult, type VideoDurations } from "@/lib/analysis";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import type { AnalysisMode, MatchedMoment } from "@/lib/types";
@@ -29,6 +31,9 @@ type AnalysisSettingsPanelProps = {
   currentNowMs: number;
   /** Select a moment for analysis and seek both videos to it. */
   onSelectMoment: (moment: MatchedMoment) => void;
+  /** Backend save state per pair (undefined = not connected to a saved session yet). */
+  momentStatus?: (id: string) => MomentSaveStatus;
+  momentError?: (id: string) => ApiError | null;
   result: AnalysisTargetResult;
   /** Number of pairs removed after a video was replaced (0 = no notice). */
   prunedCount: number;
@@ -149,6 +154,8 @@ export default function AnalysisSettingsPanel(props: AnalysisSettingsPanelProps)
               durations={durations}
               enabled={enabled}
               onSelect={props.onSelectMoment}
+              status={props.momentStatus}
+              error={props.momentError}
               onUpdate={(id, draft) => momentsApi.update(id, draft, durations)}
               onRemove={momentsApi.remove}
               onClear={() => momentsApi.clear(kind)}

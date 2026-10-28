@@ -25,6 +25,19 @@ class Settings(BaseSettings):
 
     storage_dir: Path = Path("storage")
 
+    # Uploads
+    max_upload_bytes: int = 1024 * 1024 * 1024  # 1 GB per video
+
+    # FFmpeg / FFprobe
+    ffprobe_timeout_seconds: float = 30
+    ffmpeg_timeout_seconds: float = 120
+    max_concurrent_extractions: int = 2
+    # Short Clip sampling: frames per second taken from each clip, capped per clip to control cost.
+    clip_sample_fps: float = 8
+    clip_max_frames: int = 40
+    # Extracted frames are scaled down to this width (never up). Keeps files and later AI calls small.
+    frame_max_width: int = 1280
+
     # Reserved for the AI analysis milestone. Never hardcode the key.
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-4o"

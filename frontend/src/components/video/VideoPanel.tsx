@@ -4,11 +4,13 @@ import { useState } from "react";
 
 import { Card } from "@/components/ui/Card";
 import Icon, { type IconName } from "@/components/ui/Icon";
+import type { UploadState } from "@/hooks/useSessionSync";
 import type { VideoPlayerApi } from "@/hooks/useVideoPlayer";
 import type { TimelineHighlight } from "@/lib/analysis";
+import { apiErrorText } from "@/lib/api-errors";
 import { formatFileSize, formatTime } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/I18nProvider";
-import type { VideoFileError } from "@/lib/types";
+import type { VideoFileError, VideoSource } from "@/lib/types";
 import { MAX_VIDEO_SIZE_BYTES, VIDEO_ACCEPT, validateVideoFile } from "@/lib/video";
 
 import PlaybackControls from "./PlaybackControls";
@@ -30,8 +32,11 @@ type VideoPanelProps = {
   highlightClassName: string;
   pointClassName: string;
   analysisHighlight: TimelineHighlight | null;
-  file: File | null;
+  source: VideoSource | null;
   onFileChange: (file: File | null) => void;
+  /** Upload of this video to the backend. */
+  upload: UploadState;
+  onRetryUpload: () => void;
   player: VideoPlayerApi;
   markers: TimelineMarker[];
   selectedMarkerId: string | null;
@@ -40,7 +45,7 @@ type VideoPanelProps = {
 };
 
 export default function VideoPanel(props: VideoPanelProps) {
-  const { title, uploadHint, icon, iconClassName, file, onFileChange, player, highlight } = props;
+  const { title, uploadHint, icon, iconClassName, source, onFileChange, player, highlight } = props;
   const { state, controls } = player;
   const [fileError, setFileError] = useState<{ code: VideoFileError; name: string } | null>(null);
   const { t } = useI18n();
@@ -62,10 +67,10 @@ export default function VideoPanel(props: VideoPanelProps) {
     onFileChange(next);
   }
 
-  const details = file
+  const details = source
     ? [
-        file.name,
-        formatFileSize(file.size),
+        source.name,
+        formatFileSize(source.sizeBytes),
         ready && state.width > 0 && `${state.width}×${state.height}`,
         ready && formatTime(state.durationMs),
       ]
@@ -82,12 +87,12 @@ export default function VideoPanel(props: VideoPanelProps) {
           </span>
           <div className="min-w-0">
             <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-            <p className="truncate text-xs text-muted" title={file?.name}>
+            <p className="truncate text-xs text-muted" title={source?.name}>
               {details}
             </p>
           </div>
         </div>
-        {file && (
+        {source && (
           <div className="flex shrink-0 items-center gap-1">
             <FilePickerButton label={t.video.replace} onSelect={selectFile} />
             <button
@@ -106,16 +111,18 @@ export default function VideoPanel(props: VideoPanelProps) {
         )}
       </div>
 
-      {file && fileErrorText && (
+      {source && <UploadStatus upload={props.upload} onRetry={props.onRetryUpload} />}
+
+      {source && fileErrorText && (
         <p role="alert" className="mx-4 mb-3 rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-200">
           {fileErrorText}
         </p>
       )}
 
       <div className="px-4">
-        {file ? (
+        {source ? (
           <div className="relative aspect-video overflow-hidden rounded-xl border border-border bg-black">
-            <VideoPlayer file={file} player={player} />
+            <VideoPlayer source={source} player={player} />
 
             {state.status === "loading" && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black/70 text-sm text-muted">
@@ -175,6 +182,52 @@ export default function VideoPanel(props: VideoPanelProps) {
         )}
       </div>
     </Card>
+  );
+}
+
+/** Upload progress / result for this video. Local playback keeps working whatever the upload does. */
+function UploadStatus({ upload, onRetry }: { upload: UploadState; onRetry: () => void }) {
+  const { t } = useI18n();
+  if (upload.status === "idle") return null;
+
+  if (upload.status === "error") {
+    return (
+      <div role="alert" className="mx-4 mb-3 flex items-start justify-between gap-3 rounded-lg border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-200">
+        <span className="flex min-w-0 items-start gap-2">
+          <Icon name="alert" size={14} className="mt-px shrink-0" />
+          <span>
+            {t.upload.failed} {apiErrorText(t, upload.error)} <span className="text-rose-200/70">{t.upload.localOnly}</span>
+          </span>
+        </span>
+        <button type="button" onClick={onRetry} className="shrink-0 font-medium text-rose-100 underline-offset-2 hover:underline">
+          {t.upload.retry}
+        </button>
+      </div>
+    );
+  }
+
+  if (upload.status === "saved") {
+    return (
+      <p className="mx-4 mb-3 flex items-center gap-1.5 text-xs text-emerald-300">
+        <Icon name="check" size={13} /> {t.upload.saved}
+      </p>
+    );
+  }
+
+  const percent = upload.status === "uploading" ? Math.round(upload.progress * 100) : 100;
+  return (
+    <div role="status" className="mx-4 mb-3 flex flex-col gap-1.5">
+      <p className="flex items-center justify-between gap-2 text-xs text-muted">
+        <span className="flex items-center gap-1.5">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-primary-soft/30 border-t-primary-soft" />
+          {upload.status === "uploading" ? t.upload.uploading : t.upload.verifying}
+        </span>
+        <span className="font-mono tabular-nums">{percent}%</span>
+      </p>
+      <div className="h-1 overflow-hidden rounded-full bg-surface-raised">
+        <div className="h-full rounded-full bg-brand-gradient transition-[width] duration-300" style={{ width: `${percent}%` }} />
+      </div>
+    </div>
   );
 }
 

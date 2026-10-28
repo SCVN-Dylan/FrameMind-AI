@@ -45,6 +45,11 @@ export type AnalysisRecord = {
 
 export type VideoSlot = "reference" | "current";
 
+/** What a player shows: a local file (played from memory) or a video stored on the backend (restored session). */
+export type VideoSource =
+  | { kind: "file"; file: File; name: string; sizeBytes: number }
+  | { kind: "remote"; url: string; name: string; sizeBytes: number };
+
 /** Facts about a loaded local video file. */
 export type VideoMetadata = {
   name: string;

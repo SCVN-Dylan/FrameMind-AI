@@ -4,7 +4,10 @@ import { useState, type KeyboardEvent } from "react";
 
 import { Button } from "@/components/ui/Button";
 import Icon from "@/components/ui/Icon";
+import type { MomentSaveStatus } from "@/hooks/useSessionSync";
 import type { MomentDraft, MomentError, VideoDurations } from "@/lib/analysis";
+import type { ApiError } from "@/lib/api";
+import { apiErrorText } from "@/lib/api-errors";
 import { formatOffset, formatTime, parseTime } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import type { MatchedMoment, MomentKind } from "@/lib/types";
@@ -18,6 +21,8 @@ type MomentListProps = {
   durations: VideoDurations;
   enabled: boolean;
   onSelect: (moment: MatchedMoment) => void;
+  status?: (id: string) => MomentSaveStatus;
+  error?: (id: string) => ApiError | null;
   onUpdate: (id: string, draft: MomentDraft) => MomentError | null;
   onRemove: (id: string) => void;
   onClear: () => void;
@@ -91,6 +96,7 @@ export default function MomentList(props: MomentListProps) {
                       {moment.description ?? a.noEvent}
                     </span>
                     <MomentTimes moment={moment} />
+                    {props.status && <SaveState status={props.status(moment.id)} error={props.error?.(moment.id) ?? null} />}
                   </span>
                 </button>
                 <button
@@ -117,6 +123,32 @@ export default function MomentList(props: MomentListProps) {
         </ol>
       )}
     </div>
+  );
+}
+
+const SAVE_DOT: Record<MomentSaveStatus, string> = {
+  saved: "bg-emerald-400",
+  pending: "bg-muted",
+  saving: "bg-primary-soft animate-pulse",
+  error: "bg-rose-400",
+};
+
+/** Whether this pair is stored in the backend. */
+function SaveState({ status, error }: { status: MomentSaveStatus; error: ApiError | null }) {
+  const { t } = useI18n();
+  const reason = error?.reason;
+  const errorText =
+    status === "error" && error
+      ? reason && reason in t.analysis.errors
+        ? t.session.pairInvalid
+        : apiErrorText(t, error)
+      : null;
+  return (
+    <span className={`flex items-center gap-1.5 text-[11px] ${status === "error" ? "text-rose-300" : "text-muted"}`}>
+      <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${SAVE_DOT[status]}`} />
+      {t.session.pairStatus[status]}
+      {errorText && <span className="truncate">· {errorText}</span>}
+    </span>
   );
 }
 

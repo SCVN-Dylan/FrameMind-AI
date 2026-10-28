@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 
 import { momentEndMs, validateMoment, type MomentDraft, type MomentError, type VideoDurations } from "@/lib/analysis";
 import type { MatchedMoment, MomentKind } from "@/lib/types";
@@ -12,12 +12,13 @@ const byReferenceStart = (a: MatchedMoment, b: MatchedMoment) => startOf(a) - st
 
 /**
  * Frame pairs and clip pairs the user marked, plus the selected one of each kind.
- * Both kinds live in one list so switching analysis mode never deletes anything. Frontend state only.
+ * Both kinds live in one list so switching analysis mode never deletes anything.
+ * This is the local source of truth; useSessionSync mirrors it to the backend. Ids are UUIDs so the
+ * backend can store them as-is (and a retried save can't create a duplicate).
  */
 export function useMatchedMoments() {
   const [moments, setMoments] = useState<MatchedMoment[]>([]);
   const [selected, setSelected] = useState<Record<MomentKind, string | null>>({ frame: null, clip: null });
-  const nextId = useRef(1);
 
   const select = useCallback((kind: MomentKind, id: string | null) => {
     setSelected((prev) => ({ ...prev, [kind]: id }));
@@ -27,7 +28,7 @@ export function useMatchedMoments() {
     (draft: MomentDraft, durations: VideoDurations): MomentError | null => {
       const error = validateMoment(draft, moments, durations);
       if (error) return error;
-      const moment = { ...draft, id: `${draft.kind}-${nextId.current++}`, description: cleanDescription(draft.description) } as MatchedMoment;
+      const moment = { ...draft, id: crypto.randomUUID(), description: cleanDescription(draft.description) } as MatchedMoment;
       setMoments((prev) => [...prev, moment].sort(byReferenceStart));
       setSelected((prev) => ({ ...prev, [moment.kind]: moment.id }));
       return null;
@@ -77,7 +78,13 @@ export function useMatchedMoments() {
     [moments],
   );
 
-  return { moments, selected, select, add, update, remove, clear, prune };
+  /** Replaces everything (restoring a saved session). Selection is cleared. */
+  const replaceAll = useCallback((next: MatchedMoment[]) => {
+    setMoments([...next].sort(byReferenceStart));
+    setSelected({ frame: null, clip: null });
+  }, []);
+
+  return { moments, selected, select, add, update, remove, clear, prune, replaceAll };
 }
 
 export type MatchedMomentsApi = ReturnType<typeof useMatchedMoments>;
