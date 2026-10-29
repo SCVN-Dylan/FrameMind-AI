@@ -22,6 +22,10 @@ class Settings(BaseSettings):
     environment: str = "development"
 
     frontend_origin: str = "http://localhost:3000"
+    # Allow the standalone page (submission/index.html opened with file://, Origin "null"), protected by a pairing code.
+    standalone_frontend_enabled: bool = True
+    # Print the pairing code at startup. Start FrameMind.command turns this off: its log file must not hold the code.
+    standalone_log_pairing_code: bool = True
 
     storage_dir: Path = Path("storage")
 

@@ -15,6 +15,8 @@ Milestones 01–06 are complete (6/8). Milestone 06 was re-scoped from the OpenA
 | 7–8 | **07 — Real Feedback, History & Export** | ⬜ Next | Demo data is replaced by real AI results; History lists saved sessions and reopening one shows its feedback; clicking feedback seeks the videos; Markdown and JSON reports export successfully |
 | 9–10 | **08 — QA, Optimization & Hackathon Demo** | ⬜ | Tested with real gameplay video pairs; API speed/cost tuned; bugs fixed; full flow upload → choose mode → analyze → review → export runs end to end for the demo |
 
+Added outside the 8-milestone plan: **09 — Standalone HTML frontend** (`submission/index.html`) ✅ and **10 — One-click macOS setup & launcher** (`Start FrameMind.command`, `FrameMind-Portable.zip`) ✅.
+
 ## Scope guardrails (not in MVP)
 
 - Automatic video synchronization / scene matching

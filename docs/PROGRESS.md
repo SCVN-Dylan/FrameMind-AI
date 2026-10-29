@@ -180,11 +180,51 @@ _Last updated: 2026-10-28_
       EN keeps them (no new Codex call) with a note; EN Analyze → English; KO Short Clip → Korean; reload keeps it; no errors
 - [ ] Real model output language not yet checked (needs a real Codex run)
 
+### Milestone 09 — Standalone HTML frontend (2026-10-29)
+
+- [x] `submission/index.html` (≈260 KB, one file, no external resources, strict CSP): Dashboard (real stats from saved
+      sessions), New Analysis (players, timelines, Single Frame / Short Clip pairs with the app's rules, offline Canvas
+      frame extraction, backend extraction, Codex analysis, job card, feedback timeline and cards), History, Settings
+      (backend address, pairing, Codex status/login/logout/model, language); EN/VI/KO; responsive with mobile drawer
+- [x] Offline: everything except AI, sessions and history; pairs stored per file pair in browser storage (guarded for
+      file:// restrictions); no fake results
+- [x] Backend: pairing code for `Origin: null` (CORS + middleware), git-ignored code file; 5 new tests (102 total pass)
+- [x] Headless Chrome on the real file:// page — offline: load/play/seek, pairs 3 s ↔ 5 s seek correctly, Canvas frames
+      (single + 8/8 clip frames with timestamps), >10 s and out-of-range clips rejected, Analyze disabled, EN/VI/KO,
+      Settings/History offline, draft restored after reload, 0 non-local requests. CSP enforced: 0 violations.
+      With backend (fake Codex): wrong pairing rejected, pairing works (Settings or `#pairing=`), model select,
+      logout/login, upload, FFmpeg extraction, analysis + feedback + seek 3000/5000 ms, Korean clip feedback, History,
+      restore in a fresh browser (videos streamed from the backend), Dashboard stats, no console errors besides the
+      deliberate wrong-code 403s
+- [ ] Real Codex analysis from the standalone page not run (needs your confirmation; uses ChatGPT quota)
+- [x] Safari: verified with the launcher (Milestone 10). Firefox not tested
+
+### Milestone 10 — One-click macOS setup & launcher (2026-10-29)
+
+- [x] `Start FrameMind.command` / `Stop FrameMind.command` + `scripts/` (`common.sh`, `check_dependencies.sh`, `setup.sh`,
+      `start_backend.sh`, `stop_backend.sh`); bash 3.2, paths with spaces, no eval/sudo, confirmation before each install
+- [x] Data in `~/Library/Application Support/FrameMind AI` (STORAGE_DIR), venv in `runtime/venv`, logs 600, folder 700;
+      the app folder is never written to (no bytecode)
+- [x] Backend on 127.0.0.1 only; port fallback; no duplicates; only the launcher's own PID is stopped (verified first);
+      pairing code kept out of the log (`STANDALONE_LOG_PAIRING_CODE=false`); API-key variables removed from its environment
+- [x] Page opened already paired: helper page redirect (Chrome) / localStorage hand-over (Safari); page now also reads
+      `api` from the fragment and listens for storage updates
+- [x] `scripts/build_portable.sh` → `dist/FrameMind-Portable.zip` (runtime files only, private-file check)
+- [x] `scripts/tests/test_launcher.sh`: 92 pass — syntax/permissions, ZIP contents, missing-dependency detection and
+      install prompts with mocks (no / yes / partial / EOF), fresh venv + reuse, invalid/malicious config, port
+      conflict, health, pairing/CORS, duplicate prevention, stale PID, data kept across restart, SIGHUP/Control-C/Stop
+- [x] Backend tests pass on Python 3.9 (Apple Command Line Tools) and 3.12 (102)
+- [x] Real browsers (file://, real launcher, test data folder): Chrome and Safari connect and pair from an empty
+      localStorage; requests go to the fallback port 8001 while a dev backend holds 8000 (left untouched)
+- [ ] Not verified: a fresh Mac (Homebrew / Python / FFmpeg / Codex installs ran only against mocks), Gatekeeper prompts
+      on a downloaded ZIP, double-click from Finder (scripts were run directly), Intel Macs, Firefox
+
 ## Pending
 
 Plan: [ROADMAP.md](ROADMAP.md) — 6/8 milestones done (01–06).
 
 - [ ] 07 — Real Feedback, History & Export
+- [ ] Try `FrameMind-Portable.zip` on a second Mac (fresh install path, Gatekeeper prompt)
 - [ ] 08 — QA, Optimization & Hackathon Demo
 
 ## Known issues

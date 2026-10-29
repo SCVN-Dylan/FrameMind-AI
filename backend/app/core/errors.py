@@ -62,5 +62,9 @@ def require_local_request(request: Request) -> None:
     if host not in _LOCAL_HOSTS:
         raise AppError(403, "local_only", "This action is only available from this computer.")
     origin = request.headers.get("origin")
-    if origin is not None and origin != get_settings().frontend_origin:
+    settings = get_settings()
+    # "null" = the standalone file:// page; the pairing middleware has already checked its code.
+    if origin == "null" and settings.standalone_frontend_enabled:
+        return
+    if origin is not None and origin != settings.frontend_origin:
         raise AppError(403, "origin_not_allowed", "Requests from this origin are not allowed.")

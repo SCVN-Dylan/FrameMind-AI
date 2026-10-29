@@ -21,7 +21,10 @@ framemind-ai/
 ├── frontend/   Next.js web app (UI)
 ├── backend/    FastAPI server (API, database, video + AI services)
 ├── storage/    Local files: uploaded videos, extracted frames, SQLite DB
-└── docs/       Architecture, roadmap, progress
+├── submission/ Standalone single-file frontend (index.html)
+├── scripts/    macOS launcher scripts, portable package builder, launcher tests
+├── Start FrameMind.command / Stop FrameMind.command   one-click launcher
+└── docs/       Architecture, roadmap, progress, portable setup (PORTABLE.md)
 ```
 
 Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -162,6 +165,49 @@ your own trusted machine. Keep this a personal local tool: do not expose the bac
 | Exited with an error / usage limit | Read the message; you may have hit your plan's usage limit — wait for it to reset |
 | Not valid feedback JSON | Run it again; the answer did not match the schema and nothing was saved |
 | Interrupted | The backend restarted during the run; run it again |
+
+## Standalone page (`submission/index.html`)
+
+A single self-contained HTML file (all CSS, JavaScript and SVG icons inline; no CDN, no build, no Node.js) that
+mirrors the Next.js UI: Dashboard, New Analysis, History and Settings, in EN / VI / KO. Open it by double-clicking.
+
+- **Works offline:** load the Reference/Current videos, play/seek, match Single Frame and Short Clip pairs (same rules
+  as the app), extract frames in the browser with Canvas, switch language. Pairs are kept in browser storage per pair of
+  files and restored when the same files are loaded again. Analyze is disabled and shows "AI Backend Offline" — no
+  sample or fake results are ever shown.
+- **With the backend running** (`uvicorn app.main:app` in `backend/`): uploads, saved sessions, backend (FFmpeg) frame
+  extraction, Codex analysis in the UI language, History, Dashboard statistics and Codex account/model settings — all
+  through the existing API.
+- **Pairing (once):** a page opened from disk sends `Origin: null`, which sandboxed iframes on any website also send.
+  The backend therefore requires a pairing code from such pages (except `/api/health`). It is printed when the backend
+  starts and stored in `storage/standalone_pairing_code.txt` (owner-only, git-ignored). Enter it in the page's
+  **Settings → Local backend** (or open the page with `#pairing=<code>`). The Next.js app on `localhost:3000` is
+  unaffected. Disable with `STANDALONE_FRONTEND_ENABLED=false`.
+- The page sets a strict Content-Security-Policy: inline code only, network only to `http://localhost:*` /
+  `http://127.0.0.1:*`. The backend address is configurable in Settings (localhost only).
+- UI text and icons are copied from `frontend/src/lib/i18n/dictionaries.ts` and `frontend/src/components/ui/Icon.tsx`;
+  update the page when those change.
+
+## One-click macOS launcher and portable package
+
+`Start FrameMind.command` (double-click) sets up and starts everything for the standalone page — no Next.js, no build:
+
+1. Checks macOS (12+, Apple Silicon or Intel), the app files, Python 3.9–3.13 and FFmpeg; Codex CLI is optional.
+   Anything missing is explained and installed only after a `y` (Homebrew: official installer; then
+   `brew install python@3.12` / `ffmpeg` / `--cask codex`). No `sudo`, no `eval`.
+2. Creates a virtual environment in `~/Library/Application Support/FrameMind AI/runtime/venv` from
+   `backend/requirements.txt` (reused while requirements and Python are unchanged).
+3. Starts `uvicorn app.main:app` on `127.0.0.1:8000` with `STORAGE_DIR` set to that folder (database, videos, frames,
+   pairing code, logs). A busy port is left alone and the next free one is used; an already-running backend started
+   by the launcher is reused (verified by PID file + command line + listening port + `/api/health`).
+4. Opens `submission/index.html` (file://) in the default browser, already paired: Chrome & co. get
+   `#pairing=…&api=…` through a private helper page; Safari, which blocks file-to-file redirects, gets the values
+   through `localStorage` (shared by its file:// pages).
+5. Keeps running until Control-C, the window is closed, or `Stop FrameMind.command` — then stops only its own backend.
+
+Build the ZIP with `scripts/build_portable.sh` (→ `dist/FrameMind-Portable.zip`, git-ignored; only runtime files, checked
+for private files). Test with `scripts/tests/test_launcher.sh` (mocks for installations; a real backend and venv in a
+throwaway folder). End-user instructions: [docs/PORTABLE.md](docs/PORTABLE.md) (shipped as the package's README).
 
 ## Where data is stored
 

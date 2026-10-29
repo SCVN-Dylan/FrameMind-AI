@@ -48,6 +48,10 @@ framemind-ai/
 │   │       └── ai/           codex_cli.py (CodexCLIService), codex_account.py (login/logout/models), prompt.py
 │   ├── tests/                pytest tests
 │   └── requirements.txt
+├── submission/index.html     Standalone single-file frontend (file://)
+├── scripts/                  macOS launcher (common, check_dependencies, setup, start/stop_backend),
+│                             build_portable.sh, tests/test_launcher.sh
+├── Start FrameMind.command   One-click launcher (Stop FrameMind.command stops it)
 ├── storage/
 │   ├── videos/               Uploaded videos (git-ignored)
 │   ├── frames/               Extracted frames (git-ignored)
@@ -140,6 +144,37 @@ values stay English. `add_missing_columns()` in `db/database.py` adds such new c
   stores it on the job; `codex exec --model <slug>` uses the job's own value.
 - **Guard:** login, logout, cancel and model changes require a request from this computer and, if sent by a browser,
   the `FRONTEND_ORIGIN` origin (`require_local_request`). Login/logout are refused while an analysis is active.
+
+### Standalone page (Milestone 09)
+
+`submission/index.html` is a second frontend: one file, vanilla JavaScript, opened with `file://`. It reuses the same
+API contracts as `frontend/src/lib/api.ts` (videos, sessions, pairs, extraction, analysis, ai/provider). Video
+playback uses native `<video>`; offline frame previews use Canvas on local object URLs; real analysis frames still
+come from the backend's FFmpeg extraction. The page polls `/api/health` and one paired endpoint to show Offline /
+Not paired / Connected.
+
+Backend side: `Origin: null` is allowed by CORS only together with the `X-FrameMind-Pairing` header
+(`services/standalone.py`, middleware in `main.py`); without a valid code every route except `/api/health` returns
+403 `pairing_required`. `require_local_request` accepts `null` because the middleware has already checked the code.
+
+### macOS launcher (Milestone 10)
+
+`Start FrameMind.command` → `scripts/check_dependencies.sh --install` → `scripts/setup.sh` → `scripts/start_backend.sh`
+→ opens the page → waits on the backend PID. Shared paths and helpers are in `scripts/common.sh`.
+
+- **Data:** `~/Library/Application Support/FrameMind AI/` (override with `FRAMEMIND_DATA_DIR`) is the backend's
+  `STORAGE_DIR` and also holds `runtime/venv`, `logs/backend.log`, `run/backend.pid` and an optional `launcher.conf`
+  (`PORT=`; parsed, never sourced). The app folder is read-only at runtime.
+- **Process ownership:** the PID file stores `<pid> <port>`. A PID is trusted only if `ps` shows our
+  `-m uvicorn app.main:app … --host 127.0.0.1 --port <port>` and `lsof` shows it listening on that port. Only such a
+  process is ever signalled (SIGTERM, SIGKILL after 10 s). The backend ignores SIGHUP/SIGINT inherited from the window;
+  the launcher's trap stops it.
+- **Opening the page:** `open` drops `#fragments` from file:// URLs, so the launcher writes `run/open-framemind.html`
+  (mode 600). For Chrome/others it saves the values to localStorage and redirects to
+  `index.html#pairing=…&api=…`. Safari blocks scripted file:// → file:// navigation, so its helper only saves to
+  localStorage and closes; the launcher then opens `index.html` itself, and the page also listens for `storage` events.
+- **Package:** `scripts/build_portable.sh` copies only runtime files (launcher, `submission/index.html`, `backend/app`,
+  `backend/requirements.txt`, runtime scripts, `docs/PORTABLE.md` as README) and refuses private files.
 
 ### Planned
 

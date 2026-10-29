@@ -21,8 +21,13 @@ storage/frames/*
 !storage/videos/.gitkeep
 !storage/frames/.gitkeep
 storage/*.db
+# Local secret for the standalone page (submission/index.html)
+storage/standalone_pairing_code.txt
 
 # --- OS / editors ---
 .DS_Store
 .vscode/
 .idea/
+
+# --- Portable package (scripts/build_portable.sh) ---
+dist/
