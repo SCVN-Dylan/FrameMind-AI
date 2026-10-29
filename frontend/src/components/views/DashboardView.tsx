@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 import PageHeader from "@/components/layout/PageHeader";
 import HistoryList from "@/components/history/HistoryList";
 import { DemoBadge } from "@/components/ui/Badge";
@@ -8,6 +10,7 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import Icon from "@/components/ui/Icon";
 import StatCard from "@/components/ui/StatCard";
 import { CATEGORIES } from "@/lib/feedback";
+import { clearFlash, peekFlash } from "@/lib/flash";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { getDemoHistory } from "@/lib/mock-data";
 import type { AnalysisRecord } from "@/lib/types";
@@ -36,10 +39,27 @@ export default function DashboardView() {
   const history = getDemoHistory(language);
   const stats = getDemoStats(history);
   const d = t.dashboard;
+  // e.g. the result of Clear All Data, shown once.
+  const [flash] = useState(peekFlash);
+  useEffect(() => clearFlash(), []);
 
   return (
     <>
       <PageHeader title={d.title} description={d.description} />
+
+      {flash && (
+        <p
+          role="status"
+          className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm leading-relaxed ${
+            flash.tone === "ok"
+              ? "border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+              : "border-amber-400/30 bg-amber-400/10 text-amber-100"
+          }`}
+        >
+          <Icon name={flash.tone === "ok" ? "check" : "alert"} size={16} className="mt-0.5 shrink-0" />
+          {flash.text}
+        </p>
+      )}
 
       {/* Welcome */}
       <Card className="relative overflow-hidden p-6 sm:p-8">

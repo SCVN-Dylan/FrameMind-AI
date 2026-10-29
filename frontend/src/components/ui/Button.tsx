@@ -1,7 +1,7 @@
 import Link from "next/link";
-import type { ButtonHTMLAttributes, ComponentProps } from "react";
+import type { ComponentProps } from "react";
 
-type Variant = "primary" | "secondary" | "ghost";
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md";
 
 const BASE =
@@ -13,6 +13,9 @@ const VARIANTS: Record<Variant, string> = {
   secondary:
     "border border-border bg-surface-raised text-foreground hover:border-primary-soft/50 hover:bg-surface-raised/70",
   ghost: "text-muted hover:bg-surface-raised hover:text-foreground",
+  // Irreversible actions (Clear All Data).
+  danger:
+    "bg-rose-600 text-white shadow-lg shadow-rose-950/40 hover:bg-rose-500 enabled:active:scale-[0.98] focus-visible:outline-rose-300",
 };
 
 const SIZES: Record<Size, string> = {
@@ -24,7 +27,7 @@ function classes(variant: Variant, size: Size, extra = "") {
   return `${BASE} ${VARIANTS[variant]} ${SIZES[size]} ${extra}`;
 }
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonProps = ComponentProps<"button"> & {
   variant?: Variant;
   size?: Size;
 };

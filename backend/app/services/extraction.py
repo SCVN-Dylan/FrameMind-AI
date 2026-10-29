@@ -44,6 +44,12 @@ def _pair_lock(pair_id: str) -> threading.Lock:
         return _pair_locks.setdefault(pair_id, threading.Lock())
 
 
+def forget_pair_locks() -> None:
+    """Drops the per-pair locks (Clear All Data: the pairs no longer exist)."""
+    with _locks_guard:
+        _pair_locks.clear()
+
+
 def media_out(media: ExtractedMedia) -> MediaOut:
     return MediaOut(
         id=media.id,

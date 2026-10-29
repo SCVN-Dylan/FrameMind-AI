@@ -401,3 +401,18 @@ export function listCodexModels(refresh = false, signal?: AbortSignal): Promise<
 export function selectCodexModel(model: string | null): Promise<ApiModels> {
   return request<ApiModels>("/api/ai/provider/model", json("PUT", { model }));
 }
+
+// ---------- Data management ----------
+
+export type ApiDataReset = {
+  deleted: { sessions: number; pairs: number; jobs: number; feedback: number; media: number; videos: number };
+  files_deleted: number;
+  bytes_freed: number;
+  /** True only when the backend checked that no records or files are left. */
+  verified: boolean;
+};
+
+/** Settings → Clear All Data. Deletes every session, pair, analysis, feedback, video and frame on the backend. */
+export function clearAllData(): Promise<ApiDataReset> {
+  return request("/api/data/all?confirm=DELETE", json("DELETE"));
+}

@@ -176,6 +176,30 @@ Backend side: `Origin: null` is allowed by CORS only together with the `X-FrameM
 - **Package:** `scripts/build_portable.sh` copies only runtime files (launcher, `submission/index.html`, `backend/app`,
   `backend/requirements.txt`, runtime scripts, `docs/PORTABLE.md` as README) and refuses private files.
 
+### Clear All Data (Settings → Data Management)
+
+`DELETE /api/data/all?confirm=DELETE` (`api/routes/data.py` → `services/data_reset.py`), local only
+(`require_local_request`; the standalone page also needs its pairing code). One reset at a time (`_reset_lock`).
+
+1. **Check storage first:** `storage/videos` and `storage/frames` must be real directories (not links) directly inside
+   the storage root, and the root must not be `/`, the home folder or contain the app code. Otherwise 500
+   `data_reset_unsafe_storage` before anything is stopped or deleted.
+2. **Gate writes:** the `guard_request` middleware counts running non-GET requests; the reset sets `_resetting` (new
+   writes → 409 `data_reset_in_progress`) and waits until the count is 0 (uploads, extraction, session edits).
+3. **Stop analyses:** `analysis.cancel_all()` sets a cancel flag (checked between pairs, before each Codex run and
+   before feedback is stored), cancels queued futures and calls `codex_cli.stop_all()`, which kills each running
+   `codex exec` process group and refuses new runs. It waits for the workers to finish. Steps 2–3 give up after
+   `DATA_RESET_TIMEOUT_SECONDS` with 409 `data_reset_busy` and nothing deleted.
+4. **Delete:** feedback → jobs → media → pairs → sessions → videos in one transaction (`app_settings` kept), then every
+   entry of the two folders except `.gitkeep` (`os.scandir`, `rmtree` and `unlink` never follow links) and leftover
+   `framemind-codex-*` temp folders.
+5. **Verify:** row counts must be 0 and the folders empty, else 500 `data_reset_incomplete`. Flags are always reset.
+
+Frontends (`components/settings/DataManagement.tsx` + `lib/clear-data.ts`, and the same flow in
+`submission/index.html`): typed `DELETE` confirmation → API → `GET /api/sessions` must be empty → remove `framemind*`
+keys from localStorage/sessionStorage except language (and, in the standalone page, backend address + pairing code)
+→ reset in-memory state → Dashboard with the result. Network failure = offline: browser data only, with a warning.
+
 ### Planned
 
 1. **Report & export** — Markdown/JSON report of a completed analysis; history of past jobs in the UI.

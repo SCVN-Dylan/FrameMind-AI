@@ -221,6 +221,14 @@ Everything lives under `storage/` (set `STORAGE_DIR` in `backend/.env` to move i
 
 Interrupted uploads (`*.part`) and extractions (`.tmp-*` folders) are removed when the backend starts.
 
+**Clear All Data — Settings → Data Management:** type `DELETE` to confirm. Deletes every session, pair, analysis job,
+feedback item, uploaded video and extracted frame (rows in one SQLite transaction, then every file inside
+`storage/videos/` and `storage/frames/`), plus FrameMind keys in the browser's localStorage/sessionStorage, and resets
+the app to the Dashboard. Running analyses are cancelled first. **Kept:** `framemind.db` and its schema,
+`app_settings` (selected AI model), the pairing code, the language, the backend address and everything Codex CLI owns
+(installation and the ChatGPT sign-in in `~/.codex`; no `codex` command is run). Success is shown only after the
+backend has verified that nothing is left; if the backend is offline only browser data is cleared and the page says so.
+
 ## API
 
 Interactive docs with every request/response shape: http://localhost:8000/docs. Errors always look like
@@ -248,6 +256,7 @@ Interactive docs with every request/response shape: http://localhost:8000/docs. 
 | POST | `/api/ai/provider/logout` | `codex logout`, confirmed with `codex login status` (local only) |
 | GET | `/api/ai/provider/models[?refresh=true]` | Models from `codex debug models` (+ source and selected model) |
 | PUT | `/api/ai/provider/model` | Save the analysis model (`{"model": slug or null}`) (local only) |
+| DELETE | `/api/data/all?confirm=DELETE` | Clear All Data: cancels analyses, deletes all user records and files, verifies (local only) |
 
 "Local only" endpoints accept requests only from this computer and, from a browser, only from `FRONTEND_ORIGIN`.
 
@@ -298,5 +307,6 @@ Secrets live only in `backend/.env` (git-ignored). Never put API keys in fronten
 | `backend/.env`        | `MAX_UPLOAD_BYTES`    | Upload limit per video (default 1 GB)    |
 | `backend/.env`        | `CLIP_SAMPLE_FPS`, `CLIP_MAX_FRAMES` | Short Clip sampling rate (default 8) and cap per clip (default 40) |
 | `backend/.env`        | `FRAME_MAX_WIDTH`     | Extracted frames are scaled down to this width (default 1280) |
+| `backend/.env`        | `DATA_RESET_TIMEOUT_SECONDS` | How long Clear All Data waits for uploads/extractions/analyses to stop (default 30) |
 | `backend/.env`        | `FFMPEG_TIMEOUT_SECONDS`, `FFPROBE_TIMEOUT_SECONDS`, `MAX_CONCURRENT_EXTRACTIONS` | FFmpeg limits (defaults 120 s, 30 s, 2 jobs) |
 | `frontend/.env.local` | `NEXT_PUBLIC_API_URL` | Backend URL the browser calls            |

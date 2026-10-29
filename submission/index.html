@@ -133,6 +133,15 @@ main { display: flex; flex-direction: column; gap: 24px; width: 100%; max-width:
 .btn-secondary:not(:disabled):hover { border-color: rgba(167,139,250,.5); }
 .btn-ghost { color: var(--muted); }
 .btn-ghost:not(:disabled):hover { background: var(--surface-raised); color: var(--foreground); }
+.btn-danger { background: #e11d48; color: #fff; box-shadow: 0 10px 15px rgba(76,5,25,.4); }
+.btn-danger:not(:disabled):hover { background: var(--critical); }
+.danger-zone { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; border-radius: 12px; border: 1px solid rgba(251,113,133,.3); background: rgba(251,113,133,.05); padding: 16px; }
+.modal { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); border: 0; }
+.modal-panel { position: relative; width: 100%; max-width: 28rem; border-radius: 16px; border: 1px solid rgba(251,113,133,.3); background: var(--surface); padding: 24px; box-shadow: 0 25px 50px rgba(0,0,0,.5); }
+.modal-panel h2 { margin: 0; font-size: 18px; font-weight: 600; }
+.input.confirm-word { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: .15em; }
+.input.confirm-word:focus { border-color: var(--err-text); }
 .btn-toggled { border-color: rgba(167,139,250,.6) !important; background: rgba(124,58,237,.2) !important; color: var(--foreground); }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; color: var(--muted); transition: all .2s; }
 .icon-btn:not(:disabled):hover { background: var(--surface-raised); color: var(--foreground); }
@@ -623,6 +632,24 @@ const en = {
         aboutBefore: "The app currently runs in",
         aboutAfter: " only for the dashboard statistics and sample reports. Videos, pairs, frames and Codex feedback are real and stored by the local backend.",
     },
+    dataManagement: {
+      title: "Data Management",
+      description: "Videos, frames, sessions and AI feedback stored by FrameMind AI on this computer.",
+      clearTitle: "Clear All Data",
+      clearText: "Permanently deletes every uploaded video, extracted frame, matching pair, analysis and AI feedback, and resets the app. Your ChatGPT sign-in, the selected AI model and the language are kept.",
+      clearButton: "Clear All Data",
+      dialogTitle: "Delete All Data?",
+      dialogMessage: "This will permanently delete all uploaded videos, extracted frames, analysis history, matching pairs, AI feedback, and locally stored application data. This action cannot be undone.",
+      keeps: "Kept: ChatGPT sign-in (Codex CLI), selected AI model, language and backend connection.",
+      typePrompt: "Type DELETE to confirm",
+      cancel: "Cancel",
+      confirm: "Permanently Delete All Data",
+      deleting: "Deleting all data…",
+      success: (files, size) => `All data was deleted and the deletion was verified (${files} files, ${size} freed).`,
+      offline: "The backend is not reachable, so videos, frames, sessions and feedback stored on this computer were NOT deleted. Only FrameMind data in this browser was cleared. Start the backend and run Clear All Data again.",
+      failed: "Clear All Data failed.",
+      notVerified: "The backend finished, but saved sessions are still listed. Check the backend and try again.",
+    },
     backend: {
         checking: "Checking backend…",
         unreachable: (url) => `Backend not reachable at ${url}`,
@@ -646,6 +673,12 @@ const en = {
         localOnly: "The video still plays locally.",
     },
     apiErrors: {
+      data_reset_in_progress: "All data is being cleared. Try again in a moment.",
+      data_reset_busy: "An upload, frame extraction or analysis is still running and could not be stopped. Nothing was deleted; try again.",
+      data_reset_incomplete: "Some data could not be deleted. Check the backend log and try again.",
+      data_reset_unsafe_storage: "The storage folder failed a safety check, so nothing was deleted.",
+      data_reset_failed: "The database could not be cleared. Nothing was deleted.",
+      analysis_cancelled: "The analysis was cancelled because all data was cleared.",
         codex_already_logged_in: "Codex CLI is already signed in. Log out first to switch accounts.",
         codex_logout_failed: "Codex CLI still reports a signed-in account. Logout was not confirmed.",
         model_unsupported: "The selected model can't be used for image analysis with this account. Choose another model in Settings.",
@@ -1125,6 +1158,24 @@ const vi = {
         aboutBefore: "Ứng dụng hiện đang chạy ở",
         aboutAfter: " chỉ ở phần thống kê Dashboard và các báo cáo mẫu. Video, các cặp, frame và feedback của Codex là dữ liệu thật, được backend lưu trên máy.",
     },
+    dataManagement: {
+      title: "Quản lý dữ liệu",
+      description: "Video, frame, phiên phân tích và feedback AI mà FrameMind AI lưu trên máy này.",
+      clearTitle: "Xóa toàn bộ dữ liệu",
+      clearText: "Xóa vĩnh viễn mọi video đã tải lên, frame đã trích xuất, cặp khớp, lần phân tích và feedback AI, rồi đưa ứng dụng về trạng thái ban đầu. Đăng nhập ChatGPT, model AI đã chọn và ngôn ngữ được giữ nguyên.",
+      clearButton: "Xóa toàn bộ dữ liệu",
+      dialogTitle: "Xóa toàn bộ dữ liệu?",
+      dialogMessage: "Thao tác này sẽ xóa vĩnh viễn tất cả video đã tải lên, frame đã trích xuất, lịch sử phân tích, các cặp khớp, feedback AI và dữ liệu ứng dụng được lưu trên máy. Không thể hoàn tác thao tác này.",
+      keeps: "Được giữ lại: đăng nhập ChatGPT (Codex CLI), model AI đã chọn, ngôn ngữ và kết nối backend.",
+      typePrompt: "Nhập DELETE để xác nhận",
+      cancel: "Hủy",
+      confirm: "Xóa vĩnh viễn toàn bộ dữ liệu",
+      deleting: "Đang xóa toàn bộ dữ liệu…",
+      success: (files, size) => `Đã xóa toàn bộ dữ liệu và đã kiểm tra lại (${files} tệp, giải phóng ${size}).`,
+      offline: "Không kết nối được backend nên video, frame, phiên và feedback lưu trên máy này CHƯA bị xóa. Chỉ dữ liệu FrameMind trong trình duyệt này đã được xóa. Hãy khởi động backend rồi chạy lại Xóa toàn bộ dữ liệu.",
+      failed: "Không xóa được dữ liệu.",
+      notVerified: "Backend đã chạy xong nhưng vẫn còn phiên đã lưu. Hãy kiểm tra backend và thử lại.",
+    },
     backend: {
         checking: "Đang kiểm tra backend…",
         unreachable: (url) => `Không kết nối được backend tại ${url}`,
@@ -1148,6 +1199,12 @@ const vi = {
         localOnly: "Video vẫn phát được trên máy.",
     },
     apiErrors: {
+      data_reset_in_progress: "Đang xóa toàn bộ dữ liệu. Hãy thử lại sau giây lát.",
+      data_reset_busy: "Vẫn còn tải lên, trích xuất frame hoặc phân tích đang chạy và chưa dừng được. Chưa có gì bị xóa; hãy thử lại.",
+      data_reset_incomplete: "Không xóa được một phần dữ liệu. Hãy xem log backend và thử lại.",
+      data_reset_unsafe_storage: "Thư mục lưu trữ không qua được kiểm tra an toàn nên chưa có gì bị xóa.",
+      data_reset_failed: "Không xóa được cơ sở dữ liệu. Chưa có gì bị xóa.",
+      analysis_cancelled: "Phân tích đã bị hủy vì toàn bộ dữ liệu đã được xóa.",
         codex_already_logged_in: "Codex CLI đã đăng nhập. Hãy đăng xuất trước để đổi tài khoản.",
         codex_logout_failed: "Codex CLI vẫn báo đang đăng nhập. Chưa xác nhận được việc đăng xuất.",
         model_unsupported: "Model đã chọn không dùng được để phân tích ảnh với tài khoản này. Hãy chọn model khác trong Settings.",
@@ -1627,6 +1684,24 @@ const ko = {
         aboutBefore: "현재 앱은",
         aboutAfter: "는 대시보드 통계와 샘플 보고서에만 해당합니다. 영상, 쌍, 프레임, Codex 피드백은 실제 데이터이며 로컬 백엔드에 저장됩니다.",
     },
+    dataManagement: {
+      title: "데이터 관리",
+      description: "FrameMind AI가 이 컴퓨터에 저장한 영상, 프레임, 세션, AI 피드백.",
+      clearTitle: "모든 데이터 삭제",
+      clearText: "업로드한 영상, 추출한 프레임, 매칭 쌍, 분석, AI 피드백을 모두 영구 삭제하고 앱을 초기 상태로 되돌립니다. ChatGPT 로그인, 선택한 AI 모델, 언어 설정은 유지됩니다.",
+      clearButton: "모든 데이터 삭제",
+      dialogTitle: "모든 데이터를 삭제할까요?",
+      dialogMessage: "업로드한 모든 영상, 추출한 프레임, 분석 기록, 매칭 쌍, AI 피드백, 로컬에 저장된 앱 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.",
+      keeps: "유지됨: ChatGPT 로그인(Codex CLI), 선택한 AI 모델, 언어, 백엔드 연결.",
+      typePrompt: "확인하려면 DELETE를 입력하세요",
+      cancel: "취소",
+      confirm: "모든 데이터 영구 삭제",
+      deleting: "모든 데이터를 삭제하는 중…",
+      success: (files, size) => `모든 데이터를 삭제하고 확인했습니다 (파일 ${files}개, ${size} 확보).`,
+      offline: "백엔드에 연결할 수 없어 이 컴퓨터에 저장된 영상, 프레임, 세션, 피드백은 삭제되지 않았습니다. 이 브라우저의 FrameMind 데이터만 삭제했습니다. 백엔드를 시작한 뒤 모든 데이터 삭제를 다시 실행하세요.",
+      failed: "데이터를 삭제하지 못했습니다.",
+      notVerified: "백엔드 작업은 끝났지만 저장된 세션이 아직 남아 있습니다. 백엔드를 확인하고 다시 시도하세요.",
+    },
     backend: {
         checking: "백엔드 확인 중…",
         unreachable: (url) => `${url}에서 백엔드에 연결할 수 없습니다`,
@@ -1650,6 +1725,12 @@ const ko = {
         localOnly: "영상은 계속 로컬에서 재생됩니다.",
     },
     apiErrors: {
+      data_reset_in_progress: "모든 데이터를 삭제하는 중입니다. 잠시 후 다시 시도하세요.",
+      data_reset_busy: "업로드, 프레임 추출 또는 분석이 아직 실행 중이라 중지하지 못했습니다. 아무것도 삭제되지 않았습니다. 다시 시도하세요.",
+      data_reset_incomplete: "일부 데이터를 삭제하지 못했습니다. 백엔드 로그를 확인하고 다시 시도하세요.",
+      data_reset_unsafe_storage: "저장 폴더가 안전 검사를 통과하지 못해 아무것도 삭제하지 않았습니다.",
+      data_reset_failed: "데이터베이스를 정리하지 못했습니다. 아무것도 삭제되지 않았습니다.",
+      analysis_cancelled: "모든 데이터가 삭제되어 분석이 취소되었습니다.",
         codex_already_logged_in: "Codex CLI에 이미 로그인되어 있습니다. 계정을 바꾸려면 먼저 로그아웃하세요.",
         codex_logout_failed: "Codex CLI가 아직 로그인 상태라고 보고합니다. 로그아웃이 확인되지 않았습니다.",
         model_unsupported: "선택한 모델은 이 계정에서 이미지 분석에 사용할 수 없습니다. 설정에서 다른 모델을 선택하세요.",
@@ -2227,6 +2308,7 @@ function go(hash) { if (location.hash !== hash) location.hash = hash; else onRou
 function onRoute() {
   parseRoute();
   closeDrawer();
+  if (route.page !== "dashboard") flash = null;
   if (route.page === "analysis") {
     const id = route.params.get("session");
     if (id && id !== ws.session.id && !(ws.session.restore && ws.session.restore.id === id)) restoreSession(id);
@@ -3735,6 +3817,7 @@ function renderDashboard() {
   const steps = ["upload", "target", "sparkles"];
   return [
     pageHeader(D.title, D.description),
+    flash ? h("p", { class: `notice ${flash.tone === "ok" ? "n-ok" : "n-warn"}`, role: "status", style: { margin: 0, fontSize: "14px" } }, icon(flash.tone === "ok" ? "check" : "alert", 16), flash.text) : null,
     h("div", { "data-slot": "backend-banner" }, backendBanner()),
     h("section", { class: "card hero" },
       h("div", { class: "row wrap between gap24" },
@@ -3941,6 +4024,101 @@ function renderBackendSection() {
     msg,
     store.ok ? null : h("p", { class: "notice n-warn", style: { margin: 0 } }, S.storageOff));
 }
+// ---------- Data Management: Clear All Data ----------
+let flash = null; // { tone: "ok" | "warn", text } shown on the Dashboard after Clear All Data
+const CONFIRM_WORD = "DELETE"; // typed in every language
+// Browser keys kept by Clear All Data: the language and the backend connection (address + pairing code).
+const KEPT_KEYS = [LANG_KEY, "framemind-standalone-api", "framemind-standalone-pairing"];
+function clearBrowserData() {
+  const drop = (key) => key && key.startsWith("framemind") && !KEPT_KEYS.includes(key);
+  for (const key of Object.keys(store.mem)) if (drop(key)) delete store.mem[key];
+  for (const getStorage of [() => localStorage, () => sessionStorage]) {
+    try {
+      const storage = getStorage();
+      const keys = [];
+      for (let i = 0; i < storage.length; i++) if (drop(storage.key(i))) keys.push(storage.key(i));
+      keys.forEach((key) => storage.removeItem(key));
+    } catch { /* blocked under file://: nothing stored there */ }
+  }
+}
+/** Drops every piece of FrameMind data held in this page: workspace, players, jobs, cached sessions. */
+function resetAppState() {
+  clearTimeout(pollTimer);
+  resetWorkspace();
+  sessionsCache = { at: 0, data: null, error: null, loading: false };
+}
+/** Backend first, then this browser. Resolves to { kind: "success" | "offline" | "unverified" | "error", ... }. */
+async function clearEverything() {
+  let result;
+  try {
+    result = await api(`/api/data/all?confirm=${CONFIRM_WORD}`, { method: "DELETE" });
+  } catch (e) {
+    const err = toApiError(e);
+    if (err.status === 0) { clearBrowserData(); resetAppState(); return { kind: "offline" }; }
+    return { kind: "error", error: err };
+  }
+  try {
+    if (!result.verified || (await api("/api/sessions")).length > 0) return { kind: "unverified" };
+  } catch { return { kind: "unverified" }; }
+  clearBrowserData();
+  resetAppState();
+  return { kind: "success", result };
+}
+function openClearDataDialog(trigger) {
+  const D = t().dataManagement;
+  let busy = false;
+  const close = () => { if (busy) return; dialog.remove(); document.removeEventListener("keydown", onKey, true); trigger.focus(); };
+  const onKey = (e) => { if (e.key === "Escape") { e.stopPropagation(); close(); } };
+  const input = h("input", { class: "input confirm-word", id: "clear-confirm", autocomplete: "off", autocapitalize: "characters", spellcheck: "false", placeholder: CONFIRM_WORD,
+    oninput: () => { confirmBtn.disabled = busy || input.value !== CONFIRM_WORD; } });
+  const status = h("div", { class: "col gap6", hidden: true }); // shown once it has a message
+  const cancelBtn = button(D.cancel, { size: "md", onClick: close });
+  const confirmBtn = button(D.confirm, { variant: "danger", size: "md", iconName: "trash", disabled: true });
+  confirmBtn.type = "submit";
+  const submit = async (e) => {
+    e.preventDefault();
+    if (busy || input.value !== CONFIRM_WORD) return;
+    busy = true; input.disabled = cancelBtn.disabled = confirmBtn.disabled = true;
+    status.hidden = false;
+    status.replaceChildren(h("p", { class: "row xs muted", role: "status", style: { margin: 0 } }, spinner(), D.deleting));
+    const outcome = await clearEverything();
+    busy = false;
+    if (outcome.kind === "error" || outcome.kind === "unverified") {
+      input.disabled = cancelBtn.disabled = false; confirmBtn.disabled = input.value !== CONFIRM_WORD;
+      status.replaceChildren(h("p", { class: "notice n-err", role: "alert", style: { margin: 0 } }, icon("alert", 14),
+        outcome.kind === "error" ? `${D.failed} ${apiErrorText(outcome.error)}` : D.notVerified));
+      return;
+    }
+    flash = outcome.kind === "success"
+      ? { tone: "ok", text: D.success(outcome.result.files_deleted, formatFileSize(outcome.result.bytes_freed)) }
+      : { tone: "warn", text: D.offline };
+    dialog.remove(); document.removeEventListener("keydown", onKey, true);
+    go("#/");
+  };
+  const dialog = h("div", { class: "modal" },
+    h("button", { type: "button", class: "modal-backdrop", tabindex: "-1", "aria-label": D.cancel, onclick: close }),
+    h("div", { class: "modal-panel", role: "alertdialog", "aria-modal": "true", "aria-labelledby": "clear-title", "aria-describedby": "clear-message" },
+      h("div", { class: "row", style: { alignItems: "flex-start", gap: "12px" } },
+        h("span", { class: "sq-icon", style: { color: "var(--err-text)", background: "rgba(251,113,133,.1)", flexShrink: 0 } }, icon("trash", 20)),
+        h("div", null, h("h2", { id: "clear-title" }, D.dialogTitle), h("p", { id: "clear-message", class: "sm muted", style: { margin: "8px 0 0", lineHeight: 1.6 } }, D.dialogMessage))),
+      h("p", { class: "box xs muted", style: { margin: "16px 0 0" } }, D.keeps),
+      h("form", { class: "col gap16", style: { marginTop: "16px" }, onsubmit: submit },
+        h("label", { class: "field", for: "clear-confirm" }, D.typePrompt, input),
+        status,
+        h("div", { class: "row wrap", style: { justifyContent: "flex-end" } }, cancelBtn, confirmBtn))));
+  document.addEventListener("keydown", onKey, true);
+  document.body.appendChild(dialog);
+  input.focus();
+}
+function renderDataSection() {
+  const D = t().dataManagement;
+  const trigger = button(D.clearButton, { variant: "danger", size: "md", iconName: "trash", onClick: () => openClearDataDialog(trigger) });
+  return h("div", { class: "danger-zone" },
+    h("div", { style: { minWidth: 0, flex: "1 1 16rem" } },
+      h("p", { class: "row sm b err", style: { margin: 0 } }, icon("alert", 15), D.clearTitle),
+      h("p", { class: "sm muted", style: { margin: "4px 0 0" } }, D.clearText)),
+    trigger);
+}
 function renderSettings() {
   const T = t(), SE = T.settings;
   if (online() && !prov.status && !prov.loading) loadProviderDetails(false);
@@ -3952,6 +4130,7 @@ function renderSettings() {
       card(cardHeader(st().connTitle, st().connDesc), h("div", { class: "card-b" }, renderBackendSection())),
       card(cardHeader(T.ai.settingsTitle, T.ai.settingsDescription), h("div", { class: "card-b" }, els.provider)),
       card(cardHeader(SE.languageTitle, SE.languageDescription), h("div", { class: "card-b", style: { maxWidth: "20rem" } }, languageSwitcher(false)))),
+    card(cardHeader(T.dataManagement.title, T.dataManagement.description), h("div", { class: "card-b" }, renderDataSection())),
     card(cardHeader(SE.aboutTitle, `FrameMind AI · ${st().file}`), h("p", { class: "sm muted card-b", style: { margin: 0 } }, st().aboutText)),
   ];
 }

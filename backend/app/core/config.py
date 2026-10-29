@@ -62,6 +62,9 @@ class Settings(BaseSettings):
     # Bytes of stdout/stderr kept from a Codex run (for error messages).
     codex_output_limit_bytes: int = 64 * 1024
 
+    # Clear All Data waits this long for running uploads, extractions and analyses to stop before giving up.
+    data_reset_timeout_seconds: float = 30
+
     @property
     def storage_path(self) -> Path:
         path = self.storage_dir

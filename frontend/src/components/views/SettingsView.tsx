@@ -2,6 +2,7 @@
 
 import { ProviderStatusDetails } from "@/components/analysis/ProviderStatus";
 import BackendStatus from "@/components/BackendStatus";
+import DataManagement from "@/components/settings/DataManagement";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import PageHeader from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/Badge";
@@ -67,6 +68,8 @@ export default function SettingsView() {
           </fieldset>
         </Card>
       </div>
+
+      <DataManagement />
 
       <Card>
         <CardHeader title={s.aboutTitle} description={s.aboutDescription} />

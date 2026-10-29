@@ -75,6 +75,10 @@ Sign-in is stored by Codex CLI on this Mac (in `~/.codex`). It is never copied f
 
 Moving, replacing or deleting the app folder does not touch this data. Deleting this folder deletes your history and videos.
 
+To start over without touching anything else, use **Settings → Data Management → Clear All Data** (type `DELETE` to
+confirm). It deletes the videos, frames, sessions, analyses and feedback above and keeps `framemind.db` (empty), your
+selected AI model, the pairing code, the language, `runtime/`, `logs/` and your ChatGPT sign-in. It cannot be undone.
+
 To use another port than 8000, create `launcher.conf` there with a line such as `PORT=8765`. If the port is busy, the launcher uses the next free one.
 
 ## Stopping

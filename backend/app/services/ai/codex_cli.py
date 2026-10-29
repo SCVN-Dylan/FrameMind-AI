@@ -24,7 +24,7 @@ import threading
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from pydantic import ValidationError
 
@@ -183,6 +183,10 @@ class CodexCLIService:
         self._probe_lock = threading.Lock()
         self._slots: Optional[threading.BoundedSemaphore] = None
         self._slots_lock = threading.Lock()
+        # Running `codex exec` processes, so Clear All Data can stop them. `_stopping` refuses new runs meanwhile.
+        self._procs: Set[subprocess.Popen] = set()
+        self._procs_lock = threading.Lock()
+        self._stopping = False
         self.last_error: Optional[str] = None
 
     # ---------- Detection ----------
@@ -318,6 +322,7 @@ class CodexCLIService:
             raise CodexError("codex_busy", "Another Codex analysis is still running.")
         try:
             with stdout_path.open("wb") as out, stderr_path.open("wb") as err:
+                self._raise_if_stopping()
                 proc = _popen(
                     cmd,
                     cwd=str(workdir),
@@ -327,14 +332,24 @@ class CodexCLIService:
                     env=_child_env(),
                     start_new_session=True,  # own process group, so a timeout kills Codex and its children
                 )
+                with self._procs_lock:
+                    self._procs.add(proc)
+                    stopping = self._stopping
                 try:
+                    if stopping:  # stop_all() ran between the check above and Popen
+                        self._terminate(proc)
+                        self._raise_if_stopping()
                     proc.communicate(input=prompt.encode("utf-8"), timeout=settings.codex_timeout_seconds)
                 except subprocess.TimeoutExpired:
                     self._terminate(proc)
                     self.last_error = f"timed out after {settings.codex_timeout_seconds:.0f}s"
                     raise CodexError("codex_timeout", f"Codex did not finish within {settings.codex_timeout_seconds:.0f} seconds.")
+                finally:
+                    with self._procs_lock:
+                        self._procs.discard(proc)
         finally:
             slots.release()
+        self._raise_if_stopping()  # killed by stop_all(): not a Codex failure
 
         limit = settings.codex_output_limit_bytes
         if proc.returncode != 0:
@@ -361,6 +376,24 @@ class CodexCLIService:
             raise
         self.last_error = None
         return result
+
+    def _raise_if_stopping(self) -> None:
+        with self._procs_lock:
+            if self._stopping:
+                raise CodexError("analysis_cancelled", "The analysis was cancelled because all data is being cleared.")
+
+    def stop_all(self) -> None:
+        """Kills every running `codex exec` (and its process group) and refuses new runs until resume().
+        Never touches `codex login` flows or the Codex sign-in."""
+        with self._procs_lock:
+            self._stopping = True
+            procs = list(self._procs)
+        for proc in procs:
+            self._terminate(proc)
+
+    def resume(self) -> None:
+        with self._procs_lock:
+            self._stopping = False
 
     @staticmethod
     def _terminate(proc: subprocess.Popen) -> None:

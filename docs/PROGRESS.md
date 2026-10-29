@@ -219,6 +219,24 @@ _Last updated: 2026-10-28_
 - [ ] Not verified: a fresh Mac (Homebrew / Python / FFmpeg / Codex installs ran only against mocks), Gatekeeper prompts
       on a downloaded ZIP, double-click from Finder (scripts were run directly), Intel Macs, Firefox
 
+### Clear All Data (2026-10-29)
+
+- [x] Settings → Data Management in both frontends (Next.js + standalone page), EN / VI / KO; dialog "Delete All Data?"
+      with typed `DELETE`, Cancel / Escape / backdrop, focus returned to the trigger
+- [x] `DELETE /api/data/all?confirm=DELETE` (local only): write gate, analysis cancellation (Codex process group
+      killed), one-transaction row delete, symlink-safe file delete, verification; schema, model, pairing code and
+      Codex sign-in kept
+- [x] Browser: `framemind*` localStorage/sessionStorage keys removed (language kept; standalone also keeps backend
+      address + pairing), workspace/players/jobs/session cache reset, redirect to Dashboard with the verified result;
+      offline → browser-only clean-up and an explicit warning, never a success message
+- [x] `backend/tests/test_data_reset.py` (17): confirmation, origin/pairing, full clean-up incl. feedback/frames/
+      `.part`/temp dirs, settings + pairing kept, no Codex command run, app usable right after, repeated runs,
+      symlinks not followed, unsafe roots refused, writes refused during reset, busy timeout deletes nothing,
+      concurrent reset refused, running analysis killed before delete. Full suite: 119 pass
+- [x] Browser-checked against a throwaway backend (scratch storage): Next.js (VI/EN/KO, success, offline, error kept
+      dialog open and browser data intact) and the standalone page (success, repeat, offline, empty History)
+- [ ] Not run against real data (on purpose). No frontend unit-test runner exists; UI checks were manual
+
 ## Pending
 
 Plan: [ROADMAP.md](ROADMAP.md) — 6/8 milestones done (01–06).

@@ -15,10 +15,10 @@ import logging
 import shutil
 import tempfile
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor, wait
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
@@ -47,6 +47,9 @@ MAX_ISSUES_PER_PAIR = 8
 _create_lock = threading.Lock()
 _executor: Optional[ThreadPoolExecutor] = None
 _executor_lock = threading.Lock()
+# Submitted jobs not finished yet, and the flag Clear All Data sets to stop them (see cancel_all()).
+_futures: Set[Future] = set()
+_cancelled = threading.Event()
 
 
 def _worker() -> ThreadPoolExecutor:
@@ -57,6 +60,43 @@ def _worker() -> ThreadPoolExecutor:
                 max_workers=max(1, get_settings().codex_max_concurrent_jobs), thread_name_prefix="analysis"
             )
         return _executor
+
+
+def _submit(job_id: str) -> None:
+    future = _worker().submit(run_job, job_id)
+    if isinstance(future, Future):
+        with _executor_lock:
+            _futures.add(future)
+        future.add_done_callback(_forget)
+
+
+def _forget(future: Future) -> None:
+    with _executor_lock:
+        _futures.discard(future)
+
+
+def cancel_all(timeout: float) -> bool:
+    """Stops every queued and running job: queued ones never start, running Codex processes are killed and the
+    worker stops before its next pair. Waits up to `timeout` seconds for the workers to finish. Returns True when
+    none is left. New jobs are refused until resume_jobs()."""
+    _cancelled.set()
+    with _executor_lock:
+        futures = list(_futures)
+    for future in futures:
+        future.cancel()
+    codex_cli.stop_all()
+    _, still_running = wait(futures, timeout=timeout)
+    return not still_running
+
+
+def resume_jobs() -> None:
+    _cancelled.clear()
+    codex_cli.resume()
+
+
+def _raise_if_cancelled() -> None:
+    if _cancelled.is_set():
+        raise AppError(409, "analysis_cancelled", "The analysis was cancelled because all data is being cleared.")
 
 
 def shutdown() -> None:
@@ -218,6 +258,8 @@ def start_job(db: Session, session: AnalysisSession, request: AnalysisRunRequest
         raise codex_app_error(exc) from exc
 
     with _create_lock:
+        if _cancelled.is_set():
+            raise AppError(409, "data_reset_in_progress", "All data is being cleared. Try again in a moment.")
         active = db.scalars(
             select(AnalysisJob).where(AnalysisJob.session_id == session.id, AnalysisJob.status.in_(ACTIVE)).limit(1)
         ).first()
@@ -237,7 +279,7 @@ def start_job(db: Session, session: AnalysisSession, request: AnalysisRunRequest
         db.commit()
         db.refresh(job)
 
-    _worker().submit(run_job, job.id)
+    _submit(job.id)
     return job
 
 
@@ -350,6 +392,7 @@ def _analyse_pair(
         prompt_frames = [PromptFrame(f.label, f.role, f.timestamp_ms) for f in frames]
         description = (pair.event_description or "").replace('"', "'").replace("\n", " ")[:200]
         prompt = build_prompt(pair.id, mode, prompt_frames, description, language)
+        _raise_if_cancelled()
         output = codex_cli.run(prompt, images, workdir, model=model)
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
@@ -383,6 +426,7 @@ def run_job(job_id: str) -> None:
                 pair = pairs.get(pid)
                 if pair is None:
                     raise AppError(404, "pair_not_found", "A pair was deleted while the analysis was running.")
+                _raise_if_cancelled()
                 output, issues, rejected = _analyse_pair(db, session, pair, job.analysis_mode, job.model, job.language)
                 rejected_total += rejected
                 stored.extend(issues)
@@ -390,6 +434,7 @@ def run_job(job_id: str) -> None:
                     label = (pair.event_description or f"#{number}") if len(pair_ids) > 1 else None
                     summaries.append(f"{label}: {output.summary.strip()}" if label else output.summary.strip())
 
+            _raise_if_cancelled()  # never store feedback for data that is being cleared
             for position, values in enumerate(stored):
                 db.add(FeedbackItem(job_id=job.id, session_id=job.session_id, position=position, **values))
             _set(

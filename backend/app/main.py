@@ -11,7 +11,7 @@ from app.api.router import api_router
 from app.core.config import get_settings
 from app.core.errors import register_error_handlers
 from app.db.database import init_db
-from app.services import analysis, standalone
+from app.services import analysis, data_reset, standalone
 from app.services.storage import cleanup_interrupted_work, ensure_storage_dirs
 
 settings = get_settings()
@@ -33,6 +33,10 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)
+
+# Inner layer (registered first): runs after the pairing check, so unpaired requests are never counted.
+app.middleware("http")(data_reset.guard_request)
+
 
 @app.middleware("http")
 async def require_pairing_for_file_pages(request: Request, call_next):
