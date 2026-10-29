@@ -32,6 +32,9 @@ class SessionSummary(BaseModel):
     frame_pair_count: int
     clip_pair_count: int
     extracted_pair_count: int
+    # Latest AI analysis: its status (null = never analysed) and the feedback of the latest completed one.
+    analysis_status: Optional[str] = None
+    feedback_count: int = 0
     created_at: UTCDateTime
     updated_at: UTCDateTime
 

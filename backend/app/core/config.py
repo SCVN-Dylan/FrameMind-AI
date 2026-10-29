@@ -38,9 +38,25 @@ class Settings(BaseSettings):
     # Extracted frames are scaled down to this width (never up). Keeps files and later AI calls small.
     frame_max_width: int = 1280
 
-    # Reserved for the AI analysis milestone. Never hardcode the key.
+    # Reserved for a possible direct-API provider. Not used by the Codex CLI provider. Never hardcode the key.
     openai_api_key: Optional[str] = None
     openai_model: str = "gpt-4o"
+
+    # AI analysis through the locally installed Codex CLI, signed in with the user's ChatGPT account.
+    ai_provider: str = "codex_cli"
+    codex_cli_path: str = "codex"
+    # Empty = the Codex CLI default model.
+    codex_model: Optional[str] = None
+    codex_timeout_seconds: float = 180
+    codex_max_concurrent_jobs: int = 1
+    # Frames sent to Codex per clip (evenly picked from the extracted sequence).
+    ai_max_frames_per_clip: int = 6
+    # Pairs analysed per job (one Codex run per pair).
+    ai_max_pairs_per_job: int = 5
+    # Refuse to run when Codex is signed in with an API key (that would bill the API account).
+    codex_allow_api_key_auth: bool = False
+    # Bytes of stdout/stderr kept from a Codex run (for error messages).
+    codex_output_limit_bytes: int = 64 * 1024
 
     @property
     def storage_path(self) -> Path:

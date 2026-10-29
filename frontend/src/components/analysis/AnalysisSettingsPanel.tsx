@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader } from "@/components/ui/Card";
@@ -39,6 +41,11 @@ type AnalysisSettingsPanelProps = {
   prunedCount: number;
   onDismissPruned: () => void;
   onAnalyze: () => void;
+  /** Why Analyze can't run right now (pair not saved, Codex unavailable, ...); null = ready. */
+  analyzeBlocker: string | null;
+  analyzing: boolean;
+  /** Codex CLI status line shown under the button. */
+  providerStatus: ReactNode;
 };
 
 /**
@@ -165,22 +172,31 @@ export default function AnalysisSettingsPanel(props: AnalysisSettingsPanelProps)
           <FullVideoInfo durations={durations} />
         )}
 
-        {/* Analyze */}
+        {/* Analyze: runs the local Codex CLI on the selected pair */}
         <div className="flex flex-col gap-2 border-t border-border/60 pt-5">
-          <Button variant="primary" className="h-12 w-full text-base" disabled={!result.ok} onClick={props.onAnalyze} title={a.demoNote}>
-            <Icon name="sparkles" size={18} />
+          <Button
+            variant="primary"
+            className="h-12 w-full text-base"
+            disabled={!result.ok || props.analyzeBlocker !== null || props.analyzing}
+            onClick={props.onAnalyze}
+            title={t.ai.usageNote}
+          >
+            {props.analyzing ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <Icon name="sparkles" size={18} />
+            )}
             {a.buttons[mode]}
-            <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
-              {t.workspace.demoTag}
-            </span>
+            <span className="rounded-md bg-white/20 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide">{t.ai.source}</span>
           </Button>
-          {issueText ? (
+          {issueText || props.analyzeBlocker ? (
             <p role="alert" className="text-center text-xs text-amber-200">
-              {issueText}
+              {issueText ?? props.analyzeBlocker}
             </p>
           ) : (
-            <p className="text-center text-xs text-muted">{a.demoNote}</p>
+            <p className="text-center text-xs text-muted">{t.ai.usageNote}</p>
           )}
+          {props.providerStatus}
         </div>
       </div>
     </Card>

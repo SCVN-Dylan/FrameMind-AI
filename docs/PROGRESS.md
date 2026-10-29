@@ -4,7 +4,7 @@ _Last updated: 2026-10-28_
 
 ## Current milestone
 
-**05 — Backend Video Processing & Storage:** complete (2026-10-28). Next: **06 — OpenAI Vision Integration**.
+**06 — Local Codex CLI Integration:** complete (2026-10-29). Next: **07 — Real Feedback, History & Export**.
 
 ## Completed
 
@@ -111,11 +111,79 @@ _Last updated: 2026-10-28_
       00:03.000 / 00:05.000 → clip pair 2–4 s ↔ 6–11 s extracted as 16 / 40 frames → reload restores mode, pairs,
       videos (12 s / 15 s, playable and seekable) and frames → VI/KO text → session listed in History; no page errors
 
+### Milestone 06 — Local Codex CLI integration (2026-10-29)
+
+- [x] Codex CLI verified (codex-cli 0.165.0, signed in with ChatGPT): `codex exec` (non-interactive), `--image`,
+      `--output-schema`, `--output-last-message`, `--ephemeral`, `--ignore-user-config`, `-c` permission profiles,
+      `--disable` features. The locked-down profile was checked with `codex debug prompt-input` (local, no model call):
+      `:root` deny, only the run folder readable. Prompt goes on stdin because `--image` takes several values.
+- [x] Terms/limits reviewed: OpenAI documents `codex exec` for scripts and allows ChatGPT-managed auth on trusted
+      machines; runs count toward the ChatGPT plan's Codex limits. FrameMind stays a personal local tool.
+- [x] `CodexCLIService` (`services/ai/codex_cli.py`): detection + capability check (cached 60 s), locked-down command,
+      prompt via stdin, scrubbed env (no API keys), timeout with process-group kill, concurrency limit, output limits,
+      token redaction, API-key sign-in refused by default
+- [x] Prompt template + strict JSON Schema (`services/ai/prompt.py`); Pydantic validation (`schemas/analysis.py`)
+- [x] Analysis jobs (`services/analysis.py`): one active job per session, bounded worker pool, per-pair Codex runs,
+      Short Clip frames evenly picked (≤ `AI_MAX_FRAMES_PER_CLIP`, real timestamps, order kept), output normalization
+      (pair id, duplicates, timestamps snapped to sent frames, evidence labels → media ids), interrupted-job recovery
+- [x] SQLite: `analysis_jobs`, `feedback_items` (additive); session list shows latest analysis status + issue count
+- [x] Routes: `POST /api/analysis/{id}/run`, `GET …/status`, `GET …/results`, `GET …/jobs`, `GET /api/ai/provider/status`
+- [x] Frontend: real Analyze button (`useAnalysisJob`: submit, poll, restore), AI Analysis card (running with elapsed
+      time — no fake progress — / summary / error + Run again), Codex status line, Settings → AI provider card,
+      feedback cards with severity (critical/major/minor/suggestion), confidence, impact, how to improve, Unity
+      recommendation and evidence frames; clicking feedback seeks both videos; History analysis badge; EN/VI/KO
+- [x] Demo data stays only in Dashboard stats and "Demo AI reports"; the New Analysis page no longer shows "Demo Mode"
+- [x] 68 backend tests pass (27 new, Codex always mocked: unavailable, old version, missing options, not signed in,
+      API-key sign-in, Single Frame, Short Clip with different durations, zero issues, invalid JSON/schema, timeout,
+      non-zero exit with token redaction, duplicate jobs, validation, persistence across restart, interrupted jobs,
+      cascade delete, normalization, command safety)
+- [x] `tsc`, `npm run lint`, `npm run build` pass
+- [x] Headless Chrome run against a **fake `codex` executable** (no model call, isolated storage): Analyze → processing
+      → 2 feedback cards; clicking feedback seeks to 3000 / 5000 ms; Short Clip feedback at real sampled timestamps
+      (10 880 ms); reload restores results; VI/KO; History badge; Settings provider card; no page errors
+- [ ] Real Codex run on real gameplay videos — waiting for the user's confirmation (uses ChatGPT plan quota)
+
+### Codex account & model management (2026-10-29)
+
+- [x] Verified with codex-cli 0.165.0: `codex login` (browser flow, prints the sign-in URL and "Successfully logged in."),
+      `codex login --device-auth`, `codex logout` ("Successfully logged out"), `codex login status`,
+      `codex debug models` (+ `--bundled`), `codex exec --model`. No CLI command exposes the account e-mail or plan.
+- [x] Backend: `codex_account.py` (login flow with URL capture, timeout, cancel; confirmed logout; model catalog with
+      bundled fallback; model validation), `app_settings` table, routes `POST/GET/DELETE /api/ai/provider/login`,
+      `POST /logout`, `GET /models`, `PUT /model`; local-only + origin guard; login/logout refused during analysis;
+      sign-in modes parsed (ChatGPT, access token, API key, Bedrock) and billed modes refused by default; expired
+      sign-in during a run → `codex_not_authenticated` + cache reset
+- [x] Analyze (Single Frame and Short Clip) uses the selected model; each job stores its model; the model is checked
+      against the catalog before a job starts
+- [x] Settings → AI provider → Codex CLI: connection, sign-in type, model dropdown (source labelled, text-only models
+      disabled, unavailable saved model flagged), Login with ChatGPT (waiting state + sign-in link + cancel), Logout
+      (confirm), Refresh connection, Terminal fallback instructions; EN/VI/KO
+- [x] 86 backend tests pass (18 new, CLI faked: not installed, login success/failure/refused/URL/cancel, logout
+      success/failure, switch account, origin guard, catalog + fallbacks, selection persistence across restart,
+      unsupported/unverifiable models, analyze with selected model, queued job keeps its model, default model,
+      model removed from catalog, expired sign-in); `tsc`, lint, build pass
+- [x] Headless Chrome against a fake `codex` (no real login, no inference): Connected → choose model → persists after
+      reload → Logout → Not connected → Login → waiting + sign-in link → Connected → Analyze runs with
+      `--model fake-vision-b`; VI/KO; no page errors
+- [x] Real CLI (read-only checks only): status Connected (ChatGPT), 8 models listed from the account catalog
+
+### AI feedback in the UI language (2026-10-29)
+
+- [x] Analyze sends the current UI language; backend validates it (`en`/`vi`/`ko`, invalid/missing → `en`), stores it in
+      `analysis_jobs.language` (additive `ALTER TABLE` migration; existing jobs became `en`), and adds the output-language
+      requirement to the Codex prompt for Single Frame and Short Clip. JSON schema and enums unchanged.
+- [x] Feedback is shown as generated; switching UI language never re-runs the analysis — the AI Analysis card says which
+      language it was generated in. Earlier jobs keep their language (`GET …/results?job_id=`).
+- [x] 97 backend tests pass (11 new: vi/en/ko prompts and results, Short Clip in Korean, invalid/missing language,
+      earlier results kept, migration of an old database); `tsc`, lint, build pass
+- [x] Headless Chrome with a fake `codex` that answers in the requested language: VI UI → Vietnamese cards; switching to
+      EN keeps them (no new Codex call) with a note; EN Analyze → English; KO Short Clip → Korean; reload keeps it; no errors
+- [ ] Real model output language not yet checked (needs a real Codex run)
+
 ## Pending
 
-Plan: [ROADMAP.md](ROADMAP.md) — 5/8 milestones done (01–05).
+Plan: [ROADMAP.md](ROADMAP.md) — 6/8 milestones done (01–06).
 
-- [ ] 06 — OpenAI Vision Integration
 - [ ] 07 — Real Feedback, History & Export
 - [ ] 08 — QA, Optimization & Hackathon Demo
 
@@ -123,7 +191,19 @@ Plan: [ROADMAP.md](ROADMAP.md) — 5/8 milestones done (01–05).
 
 - Frame stepping in the browser still assumes 30 fps. The backend now stores the real fps (`videos.fps`), but the
   player doesn't use it yet.
-- All AI feedback, dashboard statistics and the "Demo AI reports" list are sample data until Milestone 06/07.
+- Dashboard statistics and the "Demo AI reports" list are still sample data (Milestone 07).
+- Codex output quality has only been checked with mocked/fake answers so far; a real run is pending.
+- Account e-mail/plan can't be shown: Codex CLI has no command for it (FrameMind does not read `~/.codex/auth.json`).
+- The model list uses `codex debug models`, a debug command whose format may change; parsing is defensive and falls
+  back to the bundled list or the CLI default model.
+- The real `codex login` / `codex logout` flows were not run from the app yet (only with a fake CLI), to avoid
+  signing you out.
+- Each pair is one Codex task (~seconds to minutes) and uses ChatGPT plan quota; there is no cost estimate or cancel button.
+- Only the latest completed analysis is shown in New Analysis; older jobs are available via `GET …/jobs` only.
+- Feedback timestamps are snapped to the frames that were sent; with Short Clip (≤ 6 frames per clip) an issue
+  between two sampled frames is located at the nearest sampled frame.
+- The Codex capability check reads `codex exec --help`; a future CLI that renames options will be reported as
+  unavailable rather than run with guessed flags.
 - Videos uploaded but never attached to a session (e.g. the session write failed and the tab was closed) stay in
   `storage/videos/` as orphans. They are not auto-deleted.
 - Pair validation runs against the browser's durations in the UI and FFprobe's on the server; a pair at the very
@@ -137,7 +217,6 @@ Plan: [ROADMAP.md](ROADMAP.md) — 5/8 milestones done (01–05).
 
 ## Next task
 
-**06 — OpenAI Vision Integration:** add `services/ai/` that sends a pair's extracted frames (one image per video
-for Single Frame, the two ordered sequences for Short Clip) to the OpenAI vision model, asks for structured JSON
-(category, severity, evidence, reference/current timestamps, Unity fix), stores the result in SQLite, and replaces
-the Demo "Analyze" button with a real call. Needs `OPENAI_API_KEY` in `backend/.env`.
+**Real Codex check (user):** with the backend running, open a session with two real gameplay videos, add one Single
+Frame pair, click Analyze and review the feedback. Then **07 — Real Feedback, History & Export:** list past analysis
+jobs in History, open a job's report, and export Markdown/JSON.

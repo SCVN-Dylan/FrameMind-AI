@@ -1,5 +1,6 @@
 "use client";
 
+import { ProviderStatusDetails } from "@/components/analysis/ProviderStatus";
 import BackendStatus from "@/components/BackendStatus";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import PageHeader from "@/components/layout/PageHeader";
@@ -22,6 +23,13 @@ export default function SettingsView() {
           <CardHeader title={s.backendTitle} description={s.backendDescription(API_BASE_URL)} />
           <div className="px-5 pb-5">
             <BackendStatus />
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title={t.ai.settingsTitle} description={t.ai.settingsDescription} />
+          <div className="px-5 pb-5">
+            <ProviderStatusDetails />
           </div>
         </Card>
 

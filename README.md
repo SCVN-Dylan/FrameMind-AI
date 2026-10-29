@@ -2,7 +2,7 @@
 
 FrameMind AI compares two gameplay videos — a **Reference** video (the expected result) and a **Current** video (your current implementation) — and uses AI vision to produce visual feedback for Unity developers: differences in camera, layout, lighting, colors, animation and VFX, with suggested fixes and timestamps.
 
-> **Status:** Milestones 01–05 done. Videos are uploaded to the backend, sessions and frame/clip pairs are saved in SQLite, and FFmpeg extracts frames. AI analysis (Milestone 06) is not implemented yet: all feedback is labelled **Demo**. See [docs/ROADMAP.md](docs/ROADMAP.md).
+> **Status:** Milestones 01–06 done. Videos are uploaded to the backend, pairs are saved in SQLite, FFmpeg extracts frames, and **Analyze** runs the locally installed **Codex CLI** (signed in with your ChatGPT account) to produce structured Unity feedback. Dashboard statistics and the sample reports in History are still **Demo** data. See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Tech stack
 
@@ -12,7 +12,7 @@ FrameMind AI compares two gameplay videos — a **Reference** video (the expecte
 | Backend          | Python 3.12 (3.9+ works), FastAPI, Uvicorn |
 | Database         | SQLite (via SQLAlchemy)              |
 | Video processing | FFmpeg + FFprobe (via subprocess)    |
-| AI               | OpenAI vision-capable model (Milestone 06) |
+| AI               | Local OpenAI Codex CLI (`codex exec`), ChatGPT sign-in, no API key |
 
 ## Project layout
 
@@ -31,6 +31,7 @@ Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 - Node.js 20+ and npm
 - Python 3.11+ recommended (3.9 still works; the dev machine uses Homebrew `python@3.12`)
 - FFmpeg + FFprobe (required for upload and frame extraction)
+- Codex CLI 0.165.0+ signed in with ChatGPT (required for Analyze): `npm install -g @openai/codex`, then `codex login`
 
 Install on macOS with Homebrew:
 
@@ -83,6 +84,85 @@ npm run dev
 
 Open http://localhost:3000. The homepage shows "FrameMind AI" and a status box that confirms the backend connection.
 
+## AI analysis with Codex CLI
+
+Analyze uses the OpenAI Codex CLI installed on this Mac, signed in with **your ChatGPT account**. No API key is
+needed or used, and FrameMind never reads or stores your credentials.
+
+**Install once:** `npm install -g @openai/codex`.
+
+**Sign in, log out, switch account — Settings → AI provider → Codex CLI:**
+
+- **Login with ChatGPT** runs the official `codex login` on this Mac. Codex opens OpenAI's sign-in page in your
+  browser (an "Open the sign-in page" link is shown too, in case no window opened). Sign in there; the panel switches
+  to **Connected** once `codex login status` confirms it. FrameMind never sees your password or tokens.
+- **Logout** (asks for confirmation) runs `codex logout` and only reports success after `codex login status` says
+  "Not logged in". Then **Login with ChatGPT** signs in again — with another ChatGPT account if you like.
+- **Refresh connection** re-checks the CLI (e.g. after signing in from a terminal).
+- If the button can't work (e.g. port 1455 is busy), sign in from Terminal: `codex login`, or
+  `codex login --device-auth` (enable device-code login in your ChatGPT security settings first).
+- Login/logout are refused while an analysis is running. Only the sign-in **type** (ChatGPT, API key, …) is shown:
+  Codex CLI has no command that reports the account's e-mail or plan, and FrameMind does not read `~/.codex/auth.json`.
+
+**Model — Settings → AI provider → AI model:** the list comes from `codex debug models` (the model catalog Codex
+loads for the signed-in account; hidden/internal models are left out). If that fails, the catalog bundled with the
+CLI is shown and labelled as such; if both fail, only "Codex CLI default model" is available. Models without image
+input are shown but disabled. The choice is saved in SQLite (`app_settings`) and used by future Single Frame and
+Short Clip analyses (`codex exec --model …`); a job keeps the model it started with. Before each analysis the model is
+re-checked against the catalog: if this account can't use it any more, Analyze asks you to pick another one.
+`codex debug models` is a debug command of the CLI, so its output format may change in future versions.
+
+**Run an analysis:** in New Analysis, upload both videos, add a Single Frame or Short Clip pair, wait for
+"Saved", select the pair and click **Analyze Selected Frames / Clips**. The AI Analysis card shows the job running
+(elapsed time, no fake percentage); feedback appears in the timeline and Feedback panel. Clicking a feedback item
+seeks each video to its own timestamp. Results are saved and come back after a refresh or a backend restart.
+Full Video stays "Future".
+
+**Feedback language:** Analyze sends the current UI language (EN / VI / KO). Codex is told to write the summary and
+every human-readable field in that language, keeping Unity terms (Cinemachine, FOV, URP, …) and all JSON field names
+and enum values (category, severity, confidence) in English, so the schema is unchanged. The language is stored on the
+job; feedback is shown exactly as generated. Switching the UI language later does not re-run anything — the AI Analysis
+card notes the language and you can click Analyze again. Missing or unknown languages fall back to English.
+
+**How Codex is invoked** (`backend/app/services/ai/codex_cli.py`): once per pair, as
+`codex exec` with the prompt on stdin, the labelled frames attached with `--image` (Single Frame: 1 per video;
+Short Clip: up to `AI_MAX_FRAMES_PER_CLIP` evenly picked frames per video, in order, with their real timestamps),
+`--output-schema` for strict JSON and `--output-last-message` to read the answer. The backend validates the answer
+with Pydantic, generates the feedback ids, checks the pair id, evidence frame labels and timestamps, and stores it.
+
+**Security restrictions** (all documented CLI options, checked against codex-cli 0.165.0):
+
+- runs in a fresh temp folder outside the project that contains only copies of the frames;
+- a permissions profile passed with `-c` denies the whole filesystem (`":root" = "deny"`) except that folder
+  (read-only) and the minimal system paths; no writes, no network, `approval_policy="never"`;
+- shell/exec, image viewing, image generation, browser, computer use, apps and plugins are disabled (`--disable`);
+- `--ignore-user-config` / `--ignore-rules` (your MCP servers, plugins and rules are not loaded), `--ephemeral`;
+- no `--dangerously-*` flags; `subprocess` argument lists only (never `shell=True`); user text never goes into
+  arguments; `OPENAI_API_KEY`/`CODEX_API_KEY` are removed from Codex's environment;
+- timeout with process-group kill, 1 concurrent Codex run by default, output size limits, tokens redacted from logs.
+
+If Codex is signed in with an API key instead of ChatGPT, Analyze is refused (so nothing is billed to an API account),
+unless you set `CODEX_ALLOW_API_KEY_AUTH=true`.
+
+**Usage limits:** every analysed pair is one Codex task and counts toward your ChatGPT plan's Codex limits
+(5-hour and weekly windows). OpenAI documents `codex exec` for scripts; running it with ChatGPT sign-in is meant for
+your own trusted machine. Keep this a personal local tool: do not expose the backend to other people.
+
+**Troubleshooting**
+
+| Message | Fix |
+| --- | --- |
+| Codex CLI is not installed | `npm install -g @openai/codex`, or set `CODEX_CLI_PATH` to the binary |
+| Codex CLI is not signed in | Settings → AI provider → Login with ChatGPT (or `codex login` in a terminal, then Refresh connection) |
+| Sign-in did not complete / port 1455 in use | Close other Codex logins, or use `codex login --device-auth` in a terminal |
+| Selected model not available | Pick another model in Settings (accounts can have different models) |
+| Codex CLI version is too old | `codex update` (0.165.0 or newer) |
+| Signed in with an API key | `codex logout && codex login` and choose ChatGPT |
+| Codex did not finish in time | Raise `CODEX_TIMEOUT_SECONDS`, or use fewer frames (`AI_MAX_FRAMES_PER_CLIP`) |
+| Exited with an error / usage limit | Read the message; you may have hit your plan's usage limit — wait for it to reset |
+| Not valid feedback JSON | Run it again; the answer did not match the schema and nothing was saved |
+| Interrupted | The backend restarted during the run; run it again |
+
 ## Where data is stored
 
 Everything lives under `storage/` (set `STORAGE_DIR` in `backend/.env` to move it). It is git-ignored.
@@ -91,7 +171,7 @@ Everything lives under `storage/` (set `STORAGE_DIR` in `backend/.env` to move i
 | --- | --- | --- |
 | Uploaded videos | `storage/videos/<uuid>.<ext>` | Never named after the original file; the original name is metadata in SQLite |
 | Extracted frames | `storage/frames/<session>/<pair>/<run>/reference_000.jpg`, `current_000.jpg`, … | Only the latest run per pair is kept |
-| Database | `storage/framemind.db` | Tables: `videos`, `analysis_sessions`, `matching_pairs`, `extracted_media` |
+| Database | `storage/framemind.db` | Tables: `videos`, `analysis_sessions`, `matching_pairs`, `extracted_media`, `analysis_jobs`, `feedback_items`, `app_settings` |
 
 Interrupted uploads (`*.part`) and extractions (`.tmp-*` folders) are removed when the backend starts.
 
@@ -113,6 +193,17 @@ Interactive docs with every request/response shape: http://localhost:8000/docs. 
 | POST | `/api/sessions/{id}/pairs/{pair_id}/extract[?force=true]` | Extract frames for a pair with FFmpeg |
 | GET | `/api/sessions/{id}/pairs/{pair_id}/media` | Frames already extracted for a pair |
 | GET | `/api/media/{id}` · `/api/media/{id}/file` | Extracted image metadata · the JPEG |
+| POST | `/api/analysis/{session_id}/run` | Start an AI analysis (`{"analysis_mode", "pair_ids", "language"}`), 202 + job; 409 if one is running |
+| GET | `/api/analysis/{session_id}/status` | Latest job (`pending` / `processing` / `completed` / `failed`), `null` if none |
+| GET | `/api/analysis/{session_id}/results[?job_id=]` | Feedback of the latest (or given) completed job |
+| GET | `/api/analysis/{session_id}/jobs` | All jobs of the session |
+| GET | `/api/ai/provider/status[?refresh=true]` | Codex CLI installed / version / sign-in type / options / selected model / login flow (no credentials) |
+| POST · GET · DELETE | `/api/ai/provider/login` | Start `codex login` · follow it · cancel it (local only) |
+| POST | `/api/ai/provider/logout` | `codex logout`, confirmed with `codex login status` (local only) |
+| GET | `/api/ai/provider/models[?refresh=true]` | Models from `codex debug models` (+ source and selected model) |
+| PUT | `/api/ai/provider/model` | Save the analysis model (`{"model": slug or null}`) (local only) |
+
+"Local only" endpoints accept requests only from this computer and, from a browser, only from `FRONTEND_ORIGIN`.
 
 Deleting a session removes its pairs and extracted frames; a video is deleted only when no session uses it.
 Replacing a session's video removes its extracted frames and the pairs that no longer fit the new video.
@@ -131,7 +222,7 @@ Replacing a session's video removes its extracted frames and the pairs that no l
 5. Refresh the page: videos, pairs, mode and extracted frames come back. Saved sessions are listed in
    **Analysis History** (open or delete them there).
 
-The "Analyze" button is still **Demo** — it only shows sample feedback.
+Then click **Analyze** (see "AI analysis with Codex CLI" above).
 
 ## Checks
 
@@ -151,7 +242,12 @@ Secrets live only in `backend/.env` (git-ignored). Never put API keys in fronten
 | --------------------- | --------------------- | ---------------------------------------- |
 | `backend/.env`        | `FRONTEND_ORIGIN`     | URL allowed to call the API (CORS)       |
 | `backend/.env`        | `STORAGE_DIR`         | Folder for videos, frames and the DB     |
-| `backend/.env`        | `OPENAI_API_KEY`      | OpenAI key (used from the AI milestone)  |
+| `backend/.env`        | `AI_PROVIDER`         | `codex_cli` (the only provider)          |
+| `backend/.env`        | `CODEX_CLI_PATH`      | `codex` on PATH, or an absolute path     |
+| `backend/.env`        | `CODEX_MODEL`         | Initial model until one is chosen in Settings (empty = CLI default) |
+| `backend/.env`        | `CODEX_TIMEOUT_SECONDS`, `CODEX_MAX_CONCURRENT_JOBS` | Per-pair timeout (180 s), parallel Codex runs (1) |
+| `backend/.env`        | `AI_MAX_FRAMES_PER_CLIP`, `AI_MAX_PAIRS_PER_JOB` | Frames sent per clip (6), pairs per job (5) |
+| `backend/.env`        | `OPENAI_API_KEY`      | Not used by the Codex CLI provider       |
 | `backend/.env`        | `OPENAI_MODEL`        | Vision model name                        |
 | `backend/.env`        | `MAX_UPLOAD_BYTES`    | Upload limit per video (default 1 GB)    |
 | `backend/.env`        | `CLIP_SAMPLE_FPS`, `CLIP_MAX_FRAMES` | Short Clip sampling rate (default 8) and cap per clip (default 40) |

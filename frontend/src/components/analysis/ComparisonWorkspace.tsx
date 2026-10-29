@@ -3,27 +3,31 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import Icon from "@/components/ui/Icon";
 import VideoPanel, { type PlayerHighlight } from "@/components/video/VideoPanel";
 import { useMatchedMoments } from "@/hooks/useMatchedMoments";
+import { useAnalysisJob } from "@/hooks/useAnalysisJob";
 import { useSessionSync, type SessionSyncApi } from "@/hooks/useSessionSync";
 import { useVideoPlayer, type VideoPlayerApi, type VideoPlayerControls } from "@/hooks/useVideoPlayer";
-import { DEFAULT_ANALYSIS_SETTINGS, modeKind, momentStart, resolveAnalysisTarget, targetRange, timelineHighlight } from "@/lib/analysis";
+import { DEFAULT_ANALYSIS_SETTINGS, modeKind, momentStart, resolveAnalysisTarget, timelineHighlight } from "@/lib/analysis";
+import { toFeedbackItem } from "@/lib/ai-feedback";
 import { apiUrl, type ApiSession } from "@/lib/api";
 import { apiErrorText } from "@/lib/api-errors";
 import { SEVERITY_META } from "@/lib/feedback";
 import { formatOffset, formatTime } from "@/lib/format";
 import { useI18n } from "@/lib/i18n/I18nProvider";
-import { createDemoFeedbackInRange } from "@/lib/mock-data";
-import type { AnalysisMode, AnalysisSettings, AnalysisTarget, FeedbackItem, MatchedMoment, VideoSlot, VideoSource } from "@/lib/types";
+import type { AnalysisMode, AnalysisSettings, FeedbackItem, MatchedMoment, VideoSlot, VideoSource } from "@/lib/types";
 
+import AnalysisJobCard from "./AnalysisJobCard";
 import AnalysisSettingsPanel from "./AnalysisSettingsPanel";
 import AnalysisTimeline from "./AnalysisTimeline";
 import ExtractedFramesPanel from "./ExtractedFramesPanel";
 import FeedbackPanel from "./FeedbackPanel";
+import { ProviderStatusLine, useProviderStatus } from "./ProviderStatus";
 
 const NO_SOURCES: Record<VideoSlot, VideoSource | null> = { reference: null, current: null };
 
@@ -57,21 +61,18 @@ export default function ComparisonWorkspace() {
   };
   const reference = useVideoPlayer({ onReady: (ms) => onReady("reference", ms) });
   const current = useVideoPlayer({ onReady: (ms) => onReady("current", ms) });
-  const { language, t } = useI18n();
+  const { t, language } = useI18n();
 
   const [sources, setSources] = useState(NO_SOURCES);
   const [mode, setMode] = useState<AnalysisMode>(DEFAULT_ANALYSIS_SETTINGS.mode);
-  /** What the last demo run covered; null = not analysed yet. Kept as a snapshot so results don't move. */
-  const [analysis, setAnalysis] = useState<AnalysisTarget | null>(null);
   const [selectedFeedbackId, setSelectedFeedbackId] = useState<string | null>(null);
   /** When set, both players move together. Value = current time − reference time (ms). */
   const [syncOffsetMs, setSyncOffsetMs] = useState<number | null>(null);
 
   const players: Record<VideoSlot, VideoPlayerApi> = { reference, current };
 
-  /** Clears demo results and playback links that belong to the previous videos. */
+  /** Clears the feedback selection and playback links that belong to the previous videos. */
   function clearDerivedState() {
-    setAnalysis(null);
     setSelectedFeedbackId(null);
     setSyncOffsetMs(null);
     setPrunedCount(0);
@@ -138,11 +139,11 @@ export default function ComparisonWorkspace() {
   const targetResult = resolveAnalysisTarget(settings, momentsApi.moments, limits);
   const target = targetResult.ok ? targetResult.target : null;
 
-  // Rebuilt on language change so the demo feedback is shown in the selected language.
-  const feedback = useMemo(
-    () => (analysis ? createDemoFeedbackInRange(targetRange(analysis), language) : null),
-    [analysis, language],
-  );
+  // Real AI feedback of the latest completed analysis of this session (survives refresh and restarts).
+  const analysisJob = useAnalysisJob(sync.sessionId);
+  const provider = useProviderStatus();
+  const resultsData = analysisJob.results;
+  const feedback = useMemo(() => (resultsData ? resultsData.feedback.map(toFeedbackItem) : null), [resultsData]);
   const selectedFeedback = feedback?.find((item) => item.id === selectedFeedbackId) ?? null;
 
   /** Controls for one panel. In sync mode, actions are mirrored to the other video, keeping the offset. */
@@ -303,6 +304,35 @@ export default function ComparisonWorkspace() {
 
   const selectedMoment = kind ? (momentsApi.moments.find((m) => m.id === momentsApi.selected[kind]) ?? null) : null;
 
+  // Why Analyze can't run yet (shown under the button). The basic checks (videos, pairs, selection) come first.
+  const ai = t.ai.issues;
+  const analyzeBlocker =
+    mode === "full_video"
+      ? ai.fullVideo
+      : !sync.sessionId || !sync.canSync
+        ? ai.needSession
+        : selectedMoment && sync.momentStatus(selectedMoment.id) !== "saved"
+          ? ai.pairNotSaved
+          : provider.status && !provider.status.available
+            ? ai.providerUnavailable
+            : analysisJob.active
+              ? ai.running
+              : null;
+
+  function analyze() {
+    if (!target || target.mode === "full_video" || analyzeBlocker) return;
+    setSelectedFeedbackId(null);
+    void analysisJob.start(target.mode, [target.pair.id], language);
+  }
+
+  // Re-run a failed job with the same pairs, if they still exist.
+  const failedJob = analysisJob.job?.status === "failed" ? analysisJob.job : null;
+  const retryPairs = failedJob ? failedJob.pair_ids.filter((id) => momentsApi.moments.some((m) => m.id === id)) : [];
+  const retryJob =
+    failedJob && retryPairs.length > 0 && !analysisJob.active && provider.status?.available !== false
+      ? () => void analysisJob.start(failedJob.analysis_mode, retryPairs, language)
+      : null;
+
   return (
     <div className="flex flex-col gap-6">
       <Suspense fallback={null}>
@@ -403,11 +433,10 @@ export default function ComparisonWorkspace() {
         result={targetResult}
         prunedCount={prunedCount}
         onDismissPruned={() => setPrunedCount(0)}
-        onAnalyze={() => {
-          if (!target) return;
-          setAnalysis(target);
-          setSelectedFeedbackId(null);
-        }}
+        onAnalyze={analyze}
+        analyzeBlocker={analyzeBlocker}
+        analyzing={analysisJob.active}
+        providerStatus={<ProviderStatusLine provider={provider} />}
       />
 
       <ExtractedFramesPanel
@@ -417,7 +446,10 @@ export default function ComparisonWorkspace() {
         momentStatus={selectedMoment && sync.canSync ? sync.momentStatus(selectedMoment.id) : null}
         canSync={sync.canSync}
         onSeek={seekOne}
+        refreshKey={analysisJob.job?.status === "completed" ? analysisJob.job.id : ""}
       />
+
+      <AnalysisJobCard analysis={analysisJob} onRetry={retryJob} />
 
       <AnalysisTimeline
         durationMs={limits.currentMs}
@@ -434,6 +466,15 @@ export default function ComparisonWorkspace() {
         selectedId={selectedFeedbackId}
         onSelect={selectFeedback}
         emptyState={feedbackEmptyState}
+        isDemo={false}
+        badge={
+          <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" title={t.ai.sourceTooltip}>
+            <Icon name="sparkles" size={12} /> {t.ai.source}
+          </Badge>
+        }
+        notice={t.feedback.aiNotice}
+        emptyTitle={t.ai.noIssuesTitle}
+        emptyText={t.ai.noIssuesText}
       />
     </div>
   );

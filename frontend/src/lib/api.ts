@@ -64,6 +64,10 @@ export type ApiSessionSummary = {
   frame_pair_count: number;
   clip_pair_count: number;
   extracted_pair_count: number;
+  /** Status of the latest AI analysis job (null = never analysed). */
+  analysis_status: ApiJobStatus | null;
+  /** Feedback items of the latest completed analysis. */
+  feedback_count: number;
   created_at: string;
   updated_at: string;
 };
@@ -256,4 +260,144 @@ export function extractPair(sessionId: string, pairId: string, force = false, si
 
 export function getPairMedia(sessionId: string, pairId: string, signal?: AbortSignal): Promise<ApiExtraction> {
   return request<ApiExtraction>(`/api/sessions/${sessionId}/pairs/${pairId}/media`, json("GET", undefined, signal));
+}
+
+// ---------- AI analysis (local Codex CLI) ----------
+
+export type ApiSeverity = "critical" | "major" | "minor" | "suggestion";
+export type ApiConfidence = "high" | "medium" | "low";
+export type ApiJobStatus = "pending" | "processing" | "completed" | "failed";
+
+export type ApiJob = {
+  id: string;
+  session_id: string;
+  status: ApiJobStatus;
+  analysis_mode: "single_frame" | "short_clip";
+  provider: string;
+  model: string | null;
+  provider_version: string | null;
+  /** Language the feedback was generated in. */
+  language: "en" | "vi" | "ko";
+  pair_ids: string[];
+  summary: string | null;
+  feedback_count: number;
+  rejected_issue_count: number;
+  error_code: string | null;
+  error_message: string | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
+};
+
+export type ApiEvidence = {
+  label: string;
+  role: "reference" | "current";
+  timestamp_ms: number;
+  media_id: string | null;
+  /** Relative to API_BASE_URL; null if the frame was re-extracted since. */
+  url: string | null;
+};
+
+export type ApiFeedback = {
+  id: string;
+  job_id: string;
+  matching_pair_id: string | null;
+  category: "camera" | "composition" | "lighting" | "colors" | "animation" | "vfx";
+  severity: ApiSeverity;
+  confidence: ApiConfidence;
+  title: string;
+  observation: string;
+  impact: string;
+  suggested_fix: string;
+  unity_recommendation: string;
+  reference_timestamp_ms: number;
+  current_timestamp_ms: number;
+  evidence: ApiEvidence[];
+  created_at: string;
+};
+
+export type ApiAnalysisResults = { job: ApiJob; feedback: ApiFeedback[] };
+
+export type ApiProviderStatus = {
+  provider: string;
+  installed: boolean;
+  version: string | null;
+  version_supported: boolean;
+  authenticated: boolean | null;
+  auth_mode: string | null;
+  capabilities: { non_interactive: boolean; image_input: boolean; output_schema: boolean; restricted_permissions: boolean };
+  available: boolean;
+  /** Model chosen in Settings; null = Codex CLI default. */
+  model: string | null;
+  last_error: string | null;
+  login: ApiLoginFlow;
+};
+
+/** The `codex login` flow started from Settings. Never contains credentials. */
+export type ApiLoginFlow = {
+  state: "idle" | "running" | "succeeded" | "failed" | "cancelled";
+  /** OpenAI sign-in page printed by the CLI (if the browser didn't open by itself). */
+  login_url: string | null;
+  started_at: number | null;
+  finished_at: number | null;
+  error: string | null;
+};
+
+export type ApiModel = { slug: string; display_name: string; description: string; supports_images: boolean };
+
+export type ApiModels = {
+  /** codex_catalog = this account's catalog; bundled_catalog = list shipped with the CLI; unavailable = default only. */
+  source: "codex_catalog" | "bundled_catalog" | "unavailable";
+  models: ApiModel[];
+  selected: string | null;
+  selected_unavailable: boolean;
+  error: string | null;
+};
+
+export function runAnalysis(
+  sessionId: string,
+  body: { analysis_mode: "single_frame" | "short_clip"; pair_ids: string[]; language: "en" | "vi" | "ko" },
+): Promise<ApiJob> {
+  return request<ApiJob>(`/api/analysis/${sessionId}/run`, json("POST", body));
+}
+
+/** Latest job of the session, or null if it was never analysed. */
+export function getAnalysisStatus(sessionId: string, signal?: AbortSignal): Promise<ApiJob | null> {
+  return request<ApiJob | null>(`/api/analysis/${sessionId}/status`, json("GET", undefined, signal));
+}
+
+export function getAnalysisResults(sessionId: string, jobId?: string, signal?: AbortSignal): Promise<ApiAnalysisResults> {
+  const query = jobId ? `?job_id=${encodeURIComponent(jobId)}` : "";
+  return request<ApiAnalysisResults>(`/api/analysis/${sessionId}/results${query}`, json("GET", undefined, signal));
+}
+
+export function getProviderStatus(refresh = false, signal?: AbortSignal): Promise<ApiProviderStatus> {
+  return request<ApiProviderStatus>(`/api/ai/provider/status${refresh ? "?refresh=true" : ""}`, json("GET", undefined, signal));
+}
+
+// ---------- Codex account & model (Settings → AI provider) ----------
+
+export function startCodexLogin(): Promise<ApiLoginFlow> {
+  return request<ApiLoginFlow>("/api/ai/provider/login", json("POST"));
+}
+
+export function getCodexLogin(signal?: AbortSignal): Promise<ApiLoginFlow> {
+  return request<ApiLoginFlow>("/api/ai/provider/login", json("GET", undefined, signal));
+}
+
+export function cancelCodexLogin(): Promise<ApiLoginFlow> {
+  return request<ApiLoginFlow>("/api/ai/provider/login", json("DELETE"));
+}
+
+export function logoutCodex(): Promise<ApiProviderStatus> {
+  return request<ApiProviderStatus>("/api/ai/provider/logout", json("POST"));
+}
+
+export function listCodexModels(refresh = false, signal?: AbortSignal): Promise<ApiModels> {
+  return request<ApiModels>(`/api/ai/provider/models${refresh ? "?refresh=true" : ""}`, json("GET", undefined, signal));
+}
+
+/** null = Codex CLI default model. */
+export function selectCodexModel(model: string | null): Promise<ApiModels> {
+  return request<ApiModels>("/api/ai/provider/model", json("PUT", { model }));
 }

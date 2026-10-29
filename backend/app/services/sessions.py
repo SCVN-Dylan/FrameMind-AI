@@ -13,7 +13,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import not_found
-from app.db.models import AnalysisSession, ExtractedMedia, MatchingPair, utcnow
+from app.db.models import AnalysisJob, AnalysisSession, ExtractedMedia, FeedbackItem, MatchingPair, utcnow
 from app.schemas.pairs import PairOut
 from app.schemas.sessions import SessionCreate, SessionDetail, SessionSummary, SessionUpdate
 from app.services import extraction, pairs, storage, videos
@@ -32,7 +32,33 @@ def _extracted_counts(db: Session, session_ids: List[str]) -> Dict[str, int]:
     return {sid: count for sid, count in db.execute(stmt).all()}
 
 
-def _summary_fields(session: AnalysisSession, extracted: int) -> dict:
+def _analysis_info(db: Session, session_ids: List[str]) -> Dict[str, Tuple[Optional[str], int]]:
+    """session id -> (status of its latest job, feedback count of its latest completed job)."""
+    info: Dict[str, Tuple[Optional[str], int]] = {}
+    if not session_ids:
+        return info
+    jobs = db.scalars(
+        select(AnalysisJob).where(AnalysisJob.session_id.in_(session_ids)).order_by(AnalysisJob.created_at.desc())
+    ).all()
+    latest: Dict[str, str] = {}
+    completed: Dict[str, str] = {}
+    for job in jobs:
+        latest.setdefault(job.session_id, job.status)
+        if job.status == "completed":
+            completed.setdefault(job.session_id, job.id)
+    counts = dict(
+        db.execute(
+            select(FeedbackItem.job_id, func.count(FeedbackItem.id))
+            .where(FeedbackItem.job_id.in_(list(completed.values())))
+            .group_by(FeedbackItem.job_id)
+        ).all()
+    ) if completed else {}
+    for sid in session_ids:
+        info[sid] = (latest.get(sid), counts.get(completed.get(sid, ""), 0))
+    return info
+
+
+def _summary_fields(session: AnalysisSession, extracted: int, analysis: Tuple[Optional[str], int] = (None, 0)) -> dict:
     return dict(
         id=session.id,
         name=session.name,
@@ -42,6 +68,8 @@ def _summary_fields(session: AnalysisSession, extracted: int) -> dict:
         frame_pair_count=sum(1 for p in session.pairs if p.pair_type == "single_frame"),
         clip_pair_count=sum(1 for p in session.pairs if p.pair_type == "short_clip"),
         extracted_pair_count=extracted,
+        analysis_status=analysis[0],
+        feedback_count=analysis[1],
         created_at=session.created_at,
         updated_at=session.updated_at,
     )
@@ -50,7 +78,7 @@ def _summary_fields(session: AnalysisSession, extracted: int) -> dict:
 def detail(db: Session, session: AnalysisSession, pruned: Optional[List[str]] = None) -> SessionDetail:
     extracted = _extracted_counts(db, [session.id]).get(session.id, 0)
     return SessionDetail(
-        **_summary_fields(session, extracted),
+        **_summary_fields(session, extracted, _analysis_info(db, [session.id])[session.id]),
         pairs=[PairOut.model_validate(p) for p in pairs.sort_pairs(session.pairs)],
         pruned_pair_ids=pruned or [],
     )
@@ -58,8 +86,10 @@ def detail(db: Session, session: AnalysisSession, pruned: Optional[List[str]] = 
 
 def list_sessions(db: Session) -> List[SessionSummary]:
     sessions = db.scalars(select(AnalysisSession).order_by(AnalysisSession.updated_at.desc())).all()
-    counts = _extracted_counts(db, [s.id for s in sessions])
-    return [SessionSummary(**_summary_fields(s, counts.get(s.id, 0))) for s in sessions]
+    ids = [s.id for s in sessions]
+    counts = _extracted_counts(db, ids)
+    info = _analysis_info(db, ids)
+    return [SessionSummary(**_summary_fields(s, counts.get(s.id, 0), info[s.id])) for s in sessions]
 
 
 def get_session(db: Session, session_id: str) -> AnalysisSession:

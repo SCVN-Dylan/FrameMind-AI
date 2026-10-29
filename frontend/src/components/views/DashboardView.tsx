@@ -26,7 +26,7 @@ function getDemoStats(history: AnalysisRecord[]) {
     total: history.length,
     completed: completed.length,
     issues: allFeedback.length,
-    highSeverity: allFeedback.filter((item) => item.severity === "high").length,
+    highSeverity: allFeedback.filter((item) => item.severity === "critical" || item.severity === "major").length,
     topCategory,
   };
 }

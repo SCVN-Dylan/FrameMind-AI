@@ -2,9 +2,9 @@
 
 import type { ReactNode } from "react";
 
-import { SEVERITY_META, STATUS_META } from "@/lib/feedback";
+import { CONFIDENCE_META, SEVERITY_META, STATUS_META } from "@/lib/feedback";
 import { useI18n } from "@/lib/i18n/I18nProvider";
-import type { AnalysisStatus, Severity } from "@/lib/types";
+import type { AnalysisStatus, Confidence, Severity } from "@/lib/types";
 
 import Icon from "./Icon";
 
@@ -54,6 +54,15 @@ export function StatusBadge({ status }: { status: AnalysisStatus }) {
     <Badge className={meta.badge}>
       <span className={`h-1.5 w-1.5 rounded-full ${meta.dot} ${status === "processing" ? "animate-pulse" : ""}`} />
       {t.status[status]}
+    </Badge>
+  );
+}
+
+export function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
+  const { t } = useI18n();
+  return (
+    <Badge className={CONFIDENCE_META[confidence]} title={t.feedback.confidenceLabel}>
+      {t.feedback.confidence[confidence]}
     </Badge>
   );
 }

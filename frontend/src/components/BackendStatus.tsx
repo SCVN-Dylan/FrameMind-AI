@@ -44,7 +44,6 @@ export default function BackendStatus() {
     [t.backend.database, health.database],
     [t.backend.storage, health.storage],
     [t.backend.ffmpeg, health.ffmpeg],
-    [t.backend.openai, health.openai_configured],
   ];
 
   return (

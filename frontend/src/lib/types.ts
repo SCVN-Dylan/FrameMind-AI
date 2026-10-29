@@ -9,7 +9,18 @@ export type FeedbackCategory =
   | "animation"
   | "vfx";
 
-export type Severity = "high" | "medium" | "low";
+export type Severity = "critical" | "major" | "minor" | "suggestion";
+
+export type Confidence = "high" | "medium" | "low";
+
+/** A frame the AI cited for an issue. */
+export type FeedbackEvidence = {
+  label: string;
+  slot: "reference" | "current";
+  ms: number;
+  /** Absolute image URL, or null if the frame was re-extracted since the analysis. */
+  imageUrl: string | null;
+};
 
 export type FeedbackItem = {
   id: string;
@@ -17,16 +28,23 @@ export type FeedbackItem = {
   severity: Severity;
   title: string;
   summary: string;
-  /** What the reference video does at this moment. */
-  referenceNote: string;
-  /** What the current gameplay does differently. */
-  currentNote: string;
+  /** What the reference video does at this moment (demo data). */
+  referenceNote?: string;
+  /** What the current gameplay does differently (demo data). */
+  currentNote?: string;
   /** Position in the reference video (ms). */
   referenceMs: number;
   /** Position in the current gameplay video (ms). */
   currentMs: number;
   /** Step-by-step suggestion for fixing it in Unity. */
   unityFix: string[];
+  // Set for real AI feedback:
+  /** Why the difference matters. */
+  impact?: string;
+  /** How to improve it, independent of the engine. */
+  suggestedFix?: string;
+  confidence?: Confidence;
+  evidence?: FeedbackEvidence[];
 };
 
 export type AnalysisStatus = "completed" | "processing" | "failed" | "draft";

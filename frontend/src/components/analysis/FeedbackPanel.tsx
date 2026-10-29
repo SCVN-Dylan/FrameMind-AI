@@ -19,12 +19,19 @@ type FeedbackPanelProps = {
   /** Shown when `items` is null (no analysis yet). */
   emptyState: ReactNode;
   isDemo?: boolean;
+  /** Header badge for real (non-demo) results. */
+  badge?: ReactNode;
+  /** Note shown above real results. */
+  notice?: string;
+  /** Empty-list text for real results. */
+  emptyTitle?: string;
+  emptyText?: string;
 };
 
 type Filter = FeedbackCategory | "all";
 
 // Memoized: the workspace re-renders on every video time update, but feedback rarely changes.
-export default memo(function FeedbackPanel({ items, selectedId, onSelect, emptyState, isDemo = true }: FeedbackPanelProps) {
+export default memo(function FeedbackPanel({ items, selectedId, onSelect, emptyState, isDemo = true, badge, notice, emptyTitle, emptyText }: FeedbackPanelProps) {
   const [filter, setFilter] = useState<Filter>("all");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const listRef = useRef<HTMLDivElement>(null);
@@ -64,19 +71,25 @@ export default memo(function FeedbackPanel({ items, selectedId, onSelect, emptyS
       <CardHeader
         title={t.feedback.title}
         description={t.feedback.description}
-        action={items && isDemo ? <DemoBadge variant="mode" /> : undefined}
+        action={items && isDemo ? <DemoBadge variant="mode" /> : items ? badge : undefined}
       />
 
       {!items ? (
         <div className="px-5 pb-5">{emptyState}</div>
       ) : items.length === 0 ? (
-        <EmptyState icon="check" title={t.feedback.noItemsTitle} description={t.feedback.noItemsText} />
+        <EmptyState icon="check" title={emptyTitle ?? t.feedback.noItemsTitle} description={emptyText ?? t.feedback.noItemsText} />
       ) : (
         <div className="flex flex-col gap-4 px-5 pb-5">
           {isDemo && (
             <p className="flex items-start gap-2 rounded-xl border border-primary-soft/25 bg-primary/10 px-3.5 py-2.5 text-xs leading-relaxed text-primary-soft">
               <Icon name="info" size={15} className="mt-px shrink-0" />
               {t.feedback.demoNotice}
+            </p>
+          )}
+          {!isDemo && notice && (
+            <p className="flex items-start gap-2 rounded-xl border border-emerald-400/25 bg-emerald-400/5 px-3.5 py-2.5 text-xs leading-relaxed text-emerald-100/90">
+              <Icon name="info" size={15} className="mt-px shrink-0" />
+              {notice}
             </p>
           )}
 
@@ -139,11 +152,11 @@ function FeedbackSummary({ items }: { items: FeedbackItem[] }) {
         {top.length > 0 && (
           <p className="mt-1 text-xs text-muted">
             {t.feedback.biggestGaps} <span className="text-foreground">{top.join(` ${t.feedback.and} `)}</span>
-            {counts.high > 0 && <> · {t.feedback.fixHighFirst(counts.high)}</>}
+            {counts.critical + counts.major > 0 && <> · {t.feedback.fixHighFirst(counts.critical + counts.major)}</>}
           </p>
         )}
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {SEVERITY_ORDER.map((severity) => (
           <div key={severity} className="min-w-16 rounded-lg border border-border/70 bg-surface px-3 py-2 text-center">
             <p className="text-lg font-semibold text-foreground">{counts[severity]}</p>

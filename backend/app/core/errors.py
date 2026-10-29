@@ -45,3 +45,22 @@ def register_error_handlers(app: FastAPI) -> None:
     @app.exception_handler(StarletteHTTPException)
     async def _http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
         return JSONResponse(status_code=exc.status_code, content=_body("http_error", str(exc.detail)))
+
+
+_LOCAL_HOSTS = {"127.0.0.1", "::1", "localhost", "testclient"}
+
+
+def require_local_request(request: Request) -> None:
+    """FastAPI dependency for endpoints that act on the local machine (Codex sign-in, logout, settings).
+
+    Only requests from this computer are accepted, and a browser request must come from the configured
+    frontend origin. This stops other sites open in the browser from triggering them.
+    """
+    from app.core.config import get_settings
+
+    host = request.client.host if request.client else ""
+    if host not in _LOCAL_HOSTS:
+        raise AppError(403, "local_only", "This action is only available from this computer.")
+    origin = request.headers.get("origin")
+    if origin is not None and origin != get_settings().frontend_origin:
+        raise AppError(403, "origin_not_allowed", "Requests from this origin are not allowed.")

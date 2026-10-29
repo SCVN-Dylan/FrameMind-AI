@@ -26,6 +26,8 @@ type ExtractedFramesPanelProps = {
   canSync: boolean;
   /** Seek one video to an extracted frame's timestamp. */
   onSeek: (slot: VideoSlot, ms: number) => void;
+  /** Changes when frames may have been extracted elsewhere (e.g. by an analysis run), forcing a reload. */
+  refreshKey?: string;
 };
 
 /**
@@ -33,7 +35,7 @@ type ExtractedFramesPanelProps = {
  * ordered sequence per video (Short Clip). Results are cached per pair and its times, so editing a pair
  * never shows frames of its old times.
  */
-export default function ExtractedFramesPanel({ sessionId, mode, moment, momentStatus, canSync, onSeek }: ExtractedFramesPanelProps) {
+export default function ExtractedFramesPanel({ sessionId, mode, moment, momentStatus, canSync, onSeek, refreshKey = "" }: ExtractedFramesPanelProps) {
   const { t } = useI18n();
   const e = t.extraction;
   const [results, setResults] = useState<Record<string, ApiExtraction>>({});
@@ -41,7 +43,7 @@ export default function ExtractedFramesPanel({ sessionId, mode, moment, momentSt
   const [errors, setErrors] = useState<Record<string, ApiError>>({});
   const loadedKeys = useRef(new Set<string>());
 
-  const key = moment ? `${sessionId}:${momentTimesKey(moment)}` : null;
+  const key = moment ? `${sessionId}:${momentTimesKey(moment)}:${refreshKey}` : null;
   const ready = Boolean(sessionId && moment && canSync && momentStatus === "saved");
   const result = key ? results[key] : undefined;
   const error = key ? errors[key] : undefined;

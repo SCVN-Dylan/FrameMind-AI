@@ -131,6 +131,20 @@ export default function SessionList() {
               <div className="flex flex-wrap gap-1.5">
                 <Badge>{s.framePairs(session.frame_pair_count)}</Badge>
                 <Badge>{s.clipPairs(session.clip_pair_count)}</Badge>
+                {session.analysis_status && (
+                  <Badge
+                    className={
+                      session.analysis_status === "completed"
+                        ? "border-primary-soft/40 bg-primary/15 text-primary-soft"
+                        : session.analysis_status === "failed"
+                          ? "border-rose-400/30 bg-rose-400/10 text-rose-200"
+                          : "border-accent/40 bg-accent/10 text-sky-200"
+                    }
+                  >
+                    <Icon name="sparkles" size={11} /> {t.ai.status[session.analysis_status]}
+                    {session.analysis_status === "completed" && ` · ${s.analysisIssues(session.feedback_count)}`}
+                  </Badge>
+                )}
                 {session.extracted_pair_count > 0 && (
                   <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200">{s.extracted(session.extracted_pair_count)}</Badge>
                 )}

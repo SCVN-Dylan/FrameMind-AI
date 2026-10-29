@@ -18,7 +18,7 @@ const DEMO_TEMPLATES: FeedbackTemplate[] = [
   {
     at: 0.07,
     category: "camera",
-    severity: "high",
+    severity: "major",
     text: {
       en: {
         title: "Camera follow is too stiff during sprint",
@@ -61,7 +61,7 @@ const DEMO_TEMPLATES: FeedbackTemplate[] = [
   {
     at: 0.19,
     category: "composition",
-    severity: "medium",
+    severity: "minor",
     text: {
       en: {
         title: "Player is centered instead of on the thirds line",
@@ -104,7 +104,7 @@ const DEMO_TEMPLATES: FeedbackTemplate[] = [
   {
     at: 0.33,
     category: "lighting",
-    severity: "high",
+    severity: "major",
     text: {
       en: {
         title: "Scene is flat — missing rim light on the character",
@@ -147,7 +147,7 @@ const DEMO_TEMPLATES: FeedbackTemplate[] = [
   {
     at: 0.46,
     category: "colors",
-    severity: "medium",
+    severity: "minor",
     text: {
       en: {
         title: "Color grading is less saturated than the reference",
@@ -190,7 +190,7 @@ const DEMO_TEMPLATES: FeedbackTemplate[] = [
   {
     at: 0.6,
     category: "animation",
-    severity: "low",
+    severity: "suggestion",
     text: {
       en: {
         title: "Landing animation has no anticipation squash",
@@ -232,7 +232,7 @@ const DEMO_TEMPLATES: FeedbackTemplate[] = [
   {
     at: 0.74,
     category: "vfx",
-    severity: "medium",
+    severity: "minor",
     text: {
       en: {
         title: "Hit impact lacks particles and flash",
@@ -275,7 +275,7 @@ const DEMO_TEMPLATES: FeedbackTemplate[] = [
   {
     at: 0.88,
     category: "camera",
-    severity: "low",
+    severity: "suggestion",
     text: {
       en: {
         title: "Field of view does not widen at high speed",
@@ -417,7 +417,7 @@ const HISTORY_TEMPLATES: HistoryTemplate[] = [
     currentVideo: "desert_vfx_build_0398.mp4",
     durationMs: 40_000,
     status: "completed",
-    feedback: (language) => createDemoFeedback(40_000, 44_000, language).filter((item) => item.severity !== "low"),
+    feedback: (language) => createDemoFeedback(40_000, 44_000, language).filter((item) => item.severity !== "suggestion"),
   },
   {
     id: "character-select",
