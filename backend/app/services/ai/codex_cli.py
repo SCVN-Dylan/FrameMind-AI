@@ -68,7 +68,19 @@ MAX_ANSWER_BYTES = 1024 * 1024
 _which = shutil.which
 _run_process = subprocess.run
 _popen = subprocess.Popen
-_killpg = os.killpg
+
+if os.name == "nt":
+    # Windows has no process groups to signal: end the whole process tree (the npm `codex.cmd` shim, node and
+    # Codex) at once. Console programs ignore a polite taskkill, so /F is used straight away.
+    def _killpg(pid: int, sig: int) -> None:
+        subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, check=False)
+
+    NEW_PROCESS_GROUP: Dict[str, int] = {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
+    STOP_SIGNALS: Tuple[int, ...] = (signal.SIGTERM,)
+else:
+    _killpg = os.killpg
+    NEW_PROCESS_GROUP = {"start_new_session": True}
+    STOP_SIGNALS = (signal.SIGTERM, signal.SIGKILL)
 
 _VERSION_RE = re.compile(r"(\d+)\.(\d+)\.(\d+)")
 _SECRET_RE = re.compile(r"(sk-[A-Za-z0-9_-]{8,}|eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_.-]+|Bearer\s+\S+)")
@@ -110,6 +122,27 @@ class CodexProbe:
 def redact(text: str) -> str:
     """Removes anything that looks like a token before text is logged or stored."""
     return _SECRET_RE.sub("[redacted]", text)
+
+
+FAILURE_LOG_CHARS = 4000
+_FAILURE_LINE_RE = re.compile(r"error|fail|denied|unauthori[sz]ed|forbidden|limit|not found|refused|invalid|panic|timed? ?out", re.I)
+
+
+def failure_summary(detail: str) -> str:
+    """The lines of Codex's output that say why it failed, short enough to show in the UI."""
+    lines = [line.strip() for line in detail.splitlines() if line.strip()]
+    if not lines:
+        return "no output"
+    picked = [line for line in lines if _FAILURE_LINE_RE.search(line)][-3:] or lines[-1:]
+    return " | ".join(picked)[:600]
+
+
+def _install_dirs(exe: str) -> List[Path]:
+    """The folders holding the Codex executable, as launched and with symlinks resolved."""
+    path = Path(exe)
+    if not path.is_absolute():
+        return []
+    return [path.parent, path.resolve().parent]
 
 
 def _tail(path: Path, limit: int) -> str:
@@ -275,7 +308,11 @@ class CodexCLIService:
     ) -> List[str]:
         """The exact argument list for one locked-down analysis run (no shell, no user text in arguments).
         `model` must already be validated against the Codex model catalog; None = the CLI default model."""
-        root = json.dumps(str(workdir.resolve()))  # a TOML basic string
+        # Read-only: the work folder, plus Codex's own install folders. Codex re-runs its executable as a
+        # sandboxed helper (e.g. to load AGENTS.md); if that path is hidden, macOS refuses the exec
+        # ("sandbox-exec: execvp() of '/opt/homebrew/bin/codex' failed: Operation not permitted").
+        readable = [workdir.resolve(), *_install_dirs(exe)]
+        root = ", ".join(f"{json.dumps(str(path))}=\"read\"" for path in dict.fromkeys(readable))  # TOML keys
         cmd = [
             exe,
             "exec",
@@ -287,7 +324,7 @@ class CodexCLIService:
             "--cd", str(workdir),
             "-c", f'default_permissions="{PROFILE}"',
             "-c", f'permissions.{PROFILE}.extends=":read-only"',
-            "-c", f'permissions.{PROFILE}.filesystem={{":root"="deny", ":minimal"="read", {root}="read"}}',
+            "-c", f'permissions.{PROFILE}.filesystem={{":root"="deny", ":minimal"="read", {root}}}',
             "-c", 'approval_policy="never"',
             "-c", 'web_search="disabled"',
         ]
@@ -330,7 +367,7 @@ class CodexCLIService:
                     stdout=out,
                     stderr=err,
                     env=_child_env(),
-                    start_new_session=True,  # own process group, so a timeout kills Codex and its children
+                    **NEW_PROCESS_GROUP,  # own process group, so a timeout kills Codex and its children
                 )
                 with self._procs_lock:
                     self._procs.add(proc)
@@ -354,7 +391,7 @@ class CodexCLIService:
         limit = settings.codex_output_limit_bytes
         if proc.returncode != 0:
             detail = (_tail(stderr_path, limit) or _tail(stdout_path, limit)).strip()
-            last_line = detail.splitlines()[-1][:500] if detail else "no output"
+            last_line = failure_summary(detail)
             lowered = detail.lower()
             auth_failure = "401" in lowered or "unauthorized" in lowered or "not logged in" in lowered or "token" in lowered and "expired" in lowered
             code = "codex_not_authenticated" if auth_failure else "codex_failed"
@@ -362,6 +399,8 @@ class CodexCLIService:
                 self.invalidate()  # e.g. the ChatGPT sign-in expired: re-check before the next run
             self.last_error = last_line
             logger.warning("Codex exited with %s: %s", proc.returncode, last_line)
+            if detail:
+                logger.warning("Codex output (last %d chars):\n%s", FAILURE_LOG_CHARS, detail[-FAILURE_LOG_CHARS:])
             raise CodexError(code, f"Codex exited with code {proc.returncode}: {last_line}")
 
         if not answer.is_file():
@@ -397,13 +436,13 @@ class CodexCLIService:
 
     @staticmethod
     def _terminate(proc: subprocess.Popen) -> None:
-        for sig, wait in ((signal.SIGTERM, 5), (signal.SIGKILL, 5)):
+        for sig in STOP_SIGNALS:
             try:
                 _killpg(proc.pid, sig)
-            except (ProcessLookupError, PermissionError):
+            except OSError:  # already gone (ProcessLookupError), not ours, or taskkill missing
                 pass
             try:
-                proc.wait(timeout=wait)
+                proc.wait(timeout=5)
                 return
             except subprocess.TimeoutExpired:
                 continue

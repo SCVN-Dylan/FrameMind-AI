@@ -22,8 +22,9 @@ framemind-ai/
 ├── backend/    FastAPI server (API, database, video + AI services)
 ├── storage/    Local files: uploaded videos, extracted frames, SQLite DB
 ├── submission/ Standalone single-file frontend (index.html)
-├── scripts/    macOS launcher scripts, portable package builder, launcher tests
-├── Start FrameMind.command / Stop FrameMind.command   one-click launcher
+├── scripts/    macOS launcher scripts, Windows launcher (scripts/windows), portable package builder, launcher tests
+├── Start FrameMind.command / Stop FrameMind.command   one-click launcher (macOS)
+├── Start FrameMind.bat / Stop FrameMind.bat           one-click launcher (Windows)
 └── docs/       Architecture, roadmap, progress, portable setup (PORTABLE.md)
 ```
 
@@ -208,6 +209,19 @@ mirrors the Next.js UI: Dashboard, New Analysis, History and Settings, in EN / V
 Build the ZIP with `scripts/build_portable.sh` (→ `dist/FrameMind-Portable.zip`, git-ignored; only runtime files, checked
 for private files). Test with `scripts/tests/test_launcher.sh` (mocks for installations; a real backend and venv in a
 throwaway folder). End-user instructions: [docs/PORTABLE.md](docs/PORTABLE.md) (shipped as the package's README).
+
+### Windows launcher
+
+The same ZIP also contains `Start FrameMind.bat` / `Stop FrameMind.bat`, which run `scripts/windows/start.ps1` /
+`stop.ps1` with the built-in Windows PowerShell 5.1 (`-ExecutionPolicy Bypass` for that run only). The steps mirror the
+macOS launcher: Python 3.9–3.13 (`winget install Python.Python.3.12 --scope user`), FFmpeg (`winget install
+Gyan.FFmpeg`) and optionally Codex CLI (`npm install -g @openai/codex@latest`, Node.js LTS through winget if npm is
+missing; Codex older than 0.165.0 is offered an update), each only after a `y`; the venv and data live in
+`%LOCALAPPDATA%\FrameMind AI`. The backend runs in the launcher's console, so Ctrl+C or closing the window stops it;
+`Stop FrameMind.bat` stops it after checking the PID file, the venv interpreter path and `/api/health`. On Windows the
+backend stops Codex with `taskkill /T /F` (no process groups) instead of `killpg`. The scripts must stay ASCII with
+CRLF line endings (`.gitattributes`); `build_portable.sh` checks the line endings. End-user instructions:
+[docs/PORTABLE-WINDOWS.md](docs/PORTABLE-WINDOWS.md) (shipped as `README-Windows.md`).
 
 ## Where data is stored
 

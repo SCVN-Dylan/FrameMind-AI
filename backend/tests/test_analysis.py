@@ -458,8 +458,44 @@ def test_build_command_has_no_prompt_or_shell_and_reads_only_workdir(tmp_path):
     assert 'approval_policy="never"' in cmd
 
 
+def test_build_command_lets_codex_read_its_own_install(tmp_path):
+    # Codex re-runs its own executable as a sandboxed helper; the profile must not hide it.
+    real = tmp_path / "Cellar" / "codex" / "bin"
+    real.mkdir(parents=True)
+    (real / "codex").write_text("")
+    links = tmp_path / "bin"
+    links.mkdir()
+    (links / "codex").symlink_to(real / "codex")
+    work = tmp_path / "work"
+    work.mkdir()
+    cmd = CodexCLIService().build_command(str(links / "codex"), work, [], work / "s.json", work / "a.json")
+    filesystem = next(arg for arg in cmd if ".filesystem=" in arg)
+    for folder in (work, links, real):
+        assert f'"{folder.resolve() if folder is not links else folder}"="read"' in filesystem
+    assert '":root"="deny"' in filesystem
+
+
 @needs_ffmpeg
 def test_status_is_null_before_first_analysis(client, codex, session):
     response = client.get(f"/api/analysis/{session['id']}/status")
     assert response.status_code == 200 and response.json() is None
     assert client.get(f"/api/analysis/{session['id']}/results").status_code == 404
+
+
+@needs_ffmpeg
+def test_nonzero_exit_reports_codex_error_lines(client, codex, session, inline_jobs):
+    output = "OpenAI Codex v0.165.0\nmodel: gpt-5\nERROR: You've hit your usage limit.\nTokens used: 0"
+    codex.exec_behaviour = lambda cmd, prompt: (1, None, output)
+    pair = _frame_pair(client, session)
+    _run(client, session, "single_frame", [pair["id"]])
+    status = client.get(f"/api/analysis/{session['id']}/status").json()
+    assert status["error_code"] == "codex_failed"
+    assert "usage limit" in status["error_message"]
+
+
+def test_failure_summary_picks_error_lines():
+    from app.services.ai.codex_cli import failure_summary
+
+    assert failure_summary("") == "no output"
+    assert failure_summary("starting\nworking\nbye") == "bye"
+    assert failure_summary("a\nerror: one\nb\nError: two\nc") == "error: one | Error: two"

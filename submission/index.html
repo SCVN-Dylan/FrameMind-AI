@@ -1928,7 +1928,7 @@ const STANDALONE_TEXT = {
     address: "Backend address",
     addressInvalid: "Use http://localhost:<port> or http://127.0.0.1:<port>.",
     pairing: "Pairing code",
-    pairingHint: "Filled in automatically by Start FrameMind.command. Otherwise it is shown when the backend starts and saved as standalone_pairing_code.txt in the data folder. It stops other websites from using your backend.",
+    pairingHint: "Filled in automatically by the Start FrameMind launcher. Otherwise it is shown when the backend starts and saved as standalone_pairing_code.txt in the data folder. It stops other websites from using your backend.",
     save: "Save & connect",
     saved: "Saved. Checking the connection…",
     pairingRejected: "The backend rejected this pairing code.",
@@ -1971,7 +1971,7 @@ const STANDALONE_TEXT = {
     address: "Địa chỉ backend",
     addressInvalid: "Dùng http://localhost:<cổng> hoặc http://127.0.0.1:<cổng>.",
     pairing: "Mã ghép nối",
-    pairingHint: "Start FrameMind.command tự điền mã này. Nếu không, mã hiện khi backend khởi động và được lưu trong file standalone_pairing_code.txt ở thư mục dữ liệu. Mã này ngăn các website khác dùng backend của bạn.",
+    pairingHint: "Launcher Start FrameMind tự điền mã này. Nếu không, mã hiện khi backend khởi động và được lưu trong file standalone_pairing_code.txt ở thư mục dữ liệu. Mã này ngăn các website khác dùng backend của bạn.",
     save: "Lưu & kết nối",
     saved: "Đã lưu. Đang kiểm tra kết nối…",
     pairingRejected: "Backend không chấp nhận mã ghép nối này.",
@@ -2014,7 +2014,7 @@ const STANDALONE_TEXT = {
     address: "백엔드 주소",
     addressInvalid: "http://localhost:<포트> 또는 http://127.0.0.1:<포트>를 사용하세요.",
     pairing: "페어링 코드",
-    pairingHint: "Start FrameMind.command가 자동으로 입력합니다. 그렇지 않으면 백엔드 시작 시 표시되며 데이터 폴더의 standalone_pairing_code.txt에 저장됩니다. 다른 웹사이트가 백엔드를 사용하지 못하게 합니다.",
+    pairingHint: "Start FrameMind 실행 파일이 자동으로 입력합니다. 그렇지 않으면 백엔드 시작 시 표시되며 데이터 폴더의 standalone_pairing_code.txt에 저장됩니다. 다른 웹사이트가 백엔드를 사용하지 못하게 합니다.",
     save: "저장 후 연결",
     saved: "저장했습니다. 연결을 확인하는 중…",
     pairingRejected: "백엔드가 이 페어링 코드를 거부했습니다.",
@@ -2257,8 +2257,14 @@ function apiErrorText(error) {
   if (!error) return "";
   const known = t().apiErrors;
   if (error.code === "pairing_required") return st().unpairedBanner;
-  return known[error.code] || error.message;
+  return withDetail(known[error.code], error.code, error.message);
 }
+// Codex failures keep the backend's message (Codex's own error lines), so the cause is visible without the log.
+function withDetail(text, code, message) {
+  if (!text) return message || "";
+  return message && CODEX_DETAIL_CODES.has(code) ? `${text} ${message}` : text;
+}
+const CODEX_DETAIL_CODES = new Set(["codex_failed", "codex_not_authenticated", "codex_invalid_output", "codex_version_unsupported", "model_unverifiable", "model_catalog_unavailable", "codex_logout_failed"]);
 const toApiError = (e) => (e instanceof ApiError ? e : new ApiError(0, "unknown", e && e.message ? e.message : String(e)));
 const isAbort = (e) => e && e.name === "AbortError";
 
@@ -3649,7 +3655,7 @@ function renderJobCard() {
   if (job && job.status === "failed") {
     const retryIds = job.pair_ids.filter((id) => ws.moments.some((m) => m.id === id));
     parts.push(h("div", { class: "notice n-err row between", role: "alert" },
-      h("span", { class: "row" }, icon("alert", 15), `${AI.failed} ${(job.error_code && T.apiErrors[job.error_code]) || job.error_message || ""}`),
+      h("span", { class: "row", style: { minWidth: 0, overflowWrap: "anywhere" } }, icon("alert", 15), `${AI.failed} ${withDetail(job.error_code && T.apiErrors[job.error_code], job.error_code, job.error_message)}`),
       retryIds.length && online() && !jobActive() ? button(AI.retry, { iconName: "restart", onClick: () => startAnalysis(job.analysis_mode, retryIds) }) : null));
   }
   if (ws.jobError && !running) parts.push(h("p", { class: "xs err", role: "alert", style: { margin: 0 } }, apiErrorText(ws.jobError)));

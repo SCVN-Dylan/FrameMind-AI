@@ -237,12 +237,24 @@ _Last updated: 2026-10-28_
       dialog open and browser data intact) and the standalone page (success, repeat, offline, empty History)
 - [ ] Not run against real data (on purpose). No frontend unit-test runner exists; UI checks were manual
 
+### Windows launcher (2026-10-29)
+
+- [x] `Start FrameMind.bat` / `Stop FrameMind.bat` → `scripts/windows/{common,start,stop}.ps1` (Windows PowerShell 5.1,
+      ASCII + CRLF): Windows 10/11 check, Python 3.9–3.13 / FFmpeg / Node.js LTS through winget and Codex CLI through
+      npm (each after a `y`; Codex < 0.165.0 offered an update), venv + data in `%LOCALAPPDATA%\FrameMind AI`, port
+      fallback, reuse of a running backend (PID + venv path + `/api/health`), paired page through a helper page
+- [x] Backend: Codex runs in its own process group on Windows (`CREATE_NEW_PROCESS_GROUP`) and is stopped with
+      `taskkill /T /F` (no `os.killpg` on Windows); `tests/test_windows.py` (2). Full suite: 121 pass
+- [x] Same `FrameMind-Portable.zip` for macOS and Windows (`README-Windows.md`); build checks CRLF
+- [ ] Not yet run on a real Windows PC (no Windows machine or PowerShell here): the scripts are unexecuted
+
 ## Pending
 
 Plan: [ROADMAP.md](ROADMAP.md) — 6/8 milestones done (01–06).
 
 - [ ] 07 — Real Feedback, History & Export
 - [ ] Try `FrameMind-Portable.zip` on a second Mac (fresh install path, Gatekeeper prompt)
+- [ ] Try `Start FrameMind.bat` on a real Windows 10/11 PC (winget installs, SmartScreen, Codex analysis)
 - [ ] 08 — QA, Optimization & Hackathon Demo
 
 ## Known issues

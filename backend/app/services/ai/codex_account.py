@@ -72,7 +72,7 @@ class CodexAccountService:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 env=cli._child_env(),
-                start_new_session=True,
+                **cli.NEW_PROCESS_GROUP,
             )
             self._flow = LoginFlow(state="running", started_at=time.time(), process=proc)
         threading.Thread(target=self._watch_login, args=(proc,), name="codex-login", daemon=True).start()
