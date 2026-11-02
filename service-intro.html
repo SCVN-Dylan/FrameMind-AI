@@ -72,6 +72,7 @@ code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monosp
 .nav-links a { display: block; padding: 8px 12px; border-radius: 10px; color: var(--muted); font-size: 14px; font-weight: 500; transition: color .2s, background .2s; }
 .nav-links a:hover { color: var(--ink); background: var(--bg-soft); }
 .nav-links a.active { color: var(--primary); background: var(--bg-tint); }
+.nav-links .m-only { display: none; }
 .nav-cta { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 12px; background: var(--ink); color: #fff; font-size: 14px; font-weight: 600; transition: transform .2s, box-shadow .2s; }
 .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(21,19,43,.18); }
 .nav-right { display: flex; align-items: center; gap: 10px; }
@@ -85,6 +86,7 @@ code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monosp
 .menu-btn { display: none; width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--line); place-items: center; color: var(--ink); }
 @media (max-width: 1200px) {
   .menu-btn { display: grid; }
+  .nav-links .m-only { display: block; }
   .nav-cta { display: none; }
   .nav-links { position: absolute; top: 68px; left: 0; right: 0; flex-direction: column; align-items: stretch; gap: 2px; padding: 12px 16px 18px; background: #fff; border-bottom: 1px solid var(--line); box-shadow: 0 20px 40px rgba(21,19,43,.08); transform: translateY(-8px); opacity: 0; visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s; }
   .nav-links a { padding: 12px 14px; font-size: 15px; }
@@ -547,6 +549,53 @@ section { position: relative; padding: 112px 0; }
 .lim-list li .ic { width: 17px; height: 17px; color: #d97706; margin-top: 2px; }
 @media (max-width: 960px) { .lim-two { grid-template-columns: 1fr; } .lim-box { padding: 22px; } }
 
+/* ---------- Get started ---------- */
+.os-tabs { display: flex; justify-content: center; margin: -20px auto 40px; }
+.os-tabs [role="tablist"] { display: inline-flex; gap: 4px; padding: 5px; border-radius: 16px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); }
+.os-tabs button { display: inline-flex; align-items: center; gap: 9px; height: 44px; padding: 0 20px; border-radius: 12px; font-weight: 600; font-size: 15px; color: var(--muted); transition: color .2s, background .2s, box-shadow .2s; }
+.os-tabs button .ic { width: 18px; height: 18px; }
+.os-tabs button:hover { color: var(--ink); }
+.os-tabs button[aria-selected="true"] { background: var(--grad); color: #fff; box-shadow: 0 8px 20px rgba(124,58,237,.28); }
+.os-tabs button .chip { height: 20px; padding: 0 7px; font-size: 11px; }
+.os-tabs button[aria-selected="true"] .chip { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.35); color: #fff; }
+.start-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 40px; align-items: start; }
+.run-steps { list-style: none; margin: 0; padding: 0; counter-reset: rs; position: relative; }
+.run-steps::before { content: ""; position: absolute; left: 21px; top: 24px; bottom: 24px; width: 2px; background: linear-gradient(var(--primary-soft), #93c5fd); opacity: .45; }
+.run-steps > li { position: relative; padding: 0 0 22px 64px; counter-increment: rs; }
+.run-steps > li:last-child { padding-bottom: 0; }
+.run-steps > li::before { content: counter(rs); position: absolute; left: 0; top: 0; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-sm); color: var(--primary); font-weight: 700; font-size: 16px; }
+.run-steps > li.key::before { background: var(--grad); color: #fff; border-color: transparent; box-shadow: 0 8px 18px rgba(124,58,237,.3); }
+.run-steps h4 { font-size: 17px; font-weight: 650; padding-top: 10px; }
+.run-steps p { margin-top: 6px; color: var(--muted); font-size: 15px; }
+.run-steps .opts { margin-top: 10px; display: grid; gap: 8px; }
+.run-steps .opt { padding: 10px 14px; border-radius: 12px; background: #fff; border: 1px solid var(--line); font-size: 14px; color: var(--ink-2); }
+.run-steps .tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+kbd { display: inline-block; min-width: 22px; padding: 1px 7px; border-radius: 6px; border: 1px solid var(--line-2); border-bottom-width: 2px; background: #fff; font: 600 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); text-align: center; }
+.start-side { display: flex; flex-direction: column; gap: 16px; position: sticky; top: 92px; }
+.finder { border-radius: 16px; background: #fff; border: 1px solid var(--line); box-shadow: var(--shadow-lg); overflow: hidden; }
+.finder-bar { display: flex; align-items: center; gap: 7px; height: 40px; padding: 0 14px; background: var(--bg-soft); border-bottom: 1px solid var(--line); font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.finder-bar i { width: 11px; height: 11px; border-radius: 50%; background: #d9d5ec; }
+.finder-bar i:nth-child(1) { background: #ff5f57; } .finder-bar i:nth-child(2) { background: #febc2e; } .finder-bar i:nth-child(3) { background: #28c840; }
+.finder-bar span { margin-left: 8px; display: flex; align-items: center; gap: 7px; }
+.finder-bar span .ic { width: 15px; height: 15px; color: var(--accent); }
+.finder ul { list-style: none; margin: 0; padding: 8px; }
+.finder li { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 9px; font-size: 13.5px; color: var(--ink-2); transition: background .3s, color .3s, opacity .3s; }
+.finder li .ic { width: 17px; height: 17px; color: var(--muted); }
+.finder li.dir .ic { color: var(--accent); }
+.finder li.dim { opacity: .45; }
+.finder li.hot { background: var(--grad); color: #fff; font-weight: 600; box-shadow: 0 8px 18px rgba(124,58,237,.28); }
+.finder li.hot .ic { color: #fff; }
+.finder li .tap { margin-left: auto; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: rgba(255,255,255,.22); display: none; }
+.finder li.hot .tap { display: inline-block; animation: tap 1.8s ease-in-out infinite; }
+@keyframes tap { 0%,100% { transform: scale(1); } 15% { transform: scale(.92); } 30% { transform: scale(1); } }
+.side-card { padding: 18px 20px; display: flex; gap: 14px; align-items: flex-start; }
+.side-card > .ic { width: 22px; height: 22px; color: var(--primary); margin-top: 2px; }
+.side-card h4 { font-size: 15.5px; font-weight: 650; }
+.side-card p { margin-top: 4px; font-size: 14px; color: var(--muted); }
+.side-card .mono { font-size: 12.5px; color: var(--ink-2); word-break: break-all; }
+@media (max-width: 960px) { .start-grid { grid-template-columns: minmax(0, 1fr); } .start-side { position: static; } }
+@media (max-width: 560px) { .os-tabs button { padding: 0 14px; font-size: 14px; } .os-tabs button .chip { display: none; } .run-steps > li { padding-left: 56px; } }
+
 /* ---------- Closing ---------- */
 .closing { padding: 0 0 112px; }
 .cta { position: relative; overflow: hidden; border-radius: 32px; padding: 72px 48px; text-align: center; color: #fff; background: radial-gradient(600px 300px at 15% 0%, rgba(255,255,255,.16), transparent 70%), var(--grad); box-shadow: 0 30px 80px rgba(91,52,200,.3); }
@@ -694,12 +743,13 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
       <li><a href="#benefits">Benefits</a></li>
       <li><a href="#technology">Technology</a></li>
       <li><a href="#limitations">Limitations</a></li>
+      <li class="m-only"><a href="#get-started">Get started</a></li>
     </ul>
     <div class="nav-right">
       <div class="lang-switch" id="langSwitch" role="group" aria-label="Language">
         <button type="button" data-pl="en" lang="en" title="English">EN</button><button type="button" data-pl="vi" lang="vi" title="Tiếng Việt">VI</button><button type="button" data-pl="ko" lang="ko" title="한국어">KO</button>
       </div>
-      <a class="nav-cta" href="#features">See the product <svg class="ic" style="width:16px;height:16px"><use href="#i-arrowRight"/></svg></a>
+      <a class="nav-cta" href="#get-started">Get started <svg class="ic" style="width:16px;height:16px"><use href="#i-arrowRight"/></svg></a>
       <button class="menu-btn" id="menuBtn" aria-label="Open navigation" aria-expanded="false" aria-controls="navLinks"><svg class="ic"><use href="#i-menu"/></svg></button>
     </div>
   </div>
@@ -1279,6 +1329,66 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
   </div>
 </section>
 
+<!-- ====================================================== GET STARTED -->
+<section id="get-started" aria-labelledby="start-title">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow reveal"><svg class="ic" style="width:15px;height:15px"><use href="#i-play"/></svg> Get started</span>
+      <h2 id="start-title" class="reveal" style="--d:.08s">Run FrameMind AI on your computer</h2>
+      <p class="reveal" style="--d:.16s">Extract one ZIP and double-click the Start file. The launcher checks what your computer is missing and asks before installing anything.</p>
+    </div>
+    <div class="os-tabs reveal">
+      <div role="tablist" aria-label="Operating system">
+        <button type="button" role="tab" id="tab-mac" aria-controls="panel-mac" aria-selected="true" data-os="mac"><svg class="ic"><use href="#i-terminal"/></svg>macOS</button>
+        <button type="button" role="tab" id="tab-win" aria-controls="panel-win" aria-selected="false" tabindex="-1" data-os="win"><svg class="ic"><use href="#i-browser"/></svg>Windows <span class="chip st-exp">Experimental</span></button>
+      </div>
+    </div>
+    <div class="start-grid">
+      <div class="reveal">
+        <ol class="run-steps" role="tabpanel" id="panel-mac" aria-labelledby="tab-mac">
+          <li><h4>Extract the ZIP</h4><p>Double-click <b>FrameMind-Portable.zip</b>. You can move the <b>FrameMind-Portable</b> folder anywhere — paths with spaces work.</p></li>
+          <li class="key"><h4>Double-click Start FrameMind.command</h4><p>A Terminal window opens and checks Python, FFmpeg and Codex CLI.</p></li>
+          <li><h4>Allow it the first time</h4><p>macOS may say the file cannot be opened, because the launcher is a script and not a signed app. You only do this once:</p>
+            <div class="opts"><div class="opt"><b>macOS 15 and newer:</b> click <b>Done</b>, then open <b>System Settings → Privacy &amp; Security</b> and click <b>Open Anyway</b>.</div><div class="opt"><b>macOS 12–14:</b> Control-click the file, choose <b>Open</b>, then click <b>Open</b> again.</div></div></li>
+          <li><h4>Install what is missing</h4><p>For each missing tool the launcher explains what it is and asks first. Type <kbd>y</kbd> and press <kbd>Return</kbd>. The first launch needs internet and takes a few minutes; later launches start in seconds.</p>
+            <div class="tools"><span class="chip">Homebrew</span><span class="chip">Python 3.9–3.13</span><span class="chip">FFmpeg</span><span class="chip">Codex CLI (optional)</span></div></li>
+          <li><h4>Use the app</h4><p>Your browser opens FrameMind AI, already connected to the backend. Keep the Terminal window open while you work.</p></li>
+          <li><h4>Sign in for AI analysis</h4><p>Open <b>Settings → AI Provider → Login with ChatGPT</b>. Only needed once per computer.</p></li>
+        </ol>
+        <ol class="run-steps" role="tabpanel" id="panel-win" aria-labelledby="tab-win" hidden>
+          <li><h4>Extract the ZIP</h4><p>Right-click <b>FrameMind-Portable.zip</b> and choose <b>Extract All…</b>. Running it from inside the ZIP does not work.</p></li>
+          <li class="key"><h4>Double-click Start FrameMind.bat</h4><p>A console window opens and checks Python, FFmpeg and Codex CLI.</p></li>
+          <li><h4>Allow it the first time</h4><p>If Windows shows <b>Windows protected your PC</b>, click <b>More info → Run anyway</b>. You only do this once.</p></li>
+          <li><h4>Install what is missing</h4><p>Tools are installed with winget (Codex CLI with npm) after you type <kbd>y</kbd> and press <kbd>Enter</kbd>. If a tool is still "not found" right after installing, close the window and start again.</p>
+            <div class="tools"><span class="chip">Python 3.12</span><span class="chip">FFmpeg</span><span class="chip">Node.js LTS</span><span class="chip">Codex CLI (optional)</span></div></li>
+          <li><h4>Use the app</h4><p>Your browser opens FrameMind AI, already connected to the backend. Keep the black window open while you work.</p></li>
+          <li><h4>Sign in for AI analysis</h4><p>Open <b>Settings → AI Provider → Login with ChatGPT</b>. Only needed once per computer.</p></li>
+        </ol>
+        <div class="f-note warn" id="winNote" hidden style="margin-top:24px"><svg class="ic"><use href="#i-alert"/></svg><span>The Windows launcher has not been run on a real Windows PC yet. If something fails, the window shows the error and the log is in <b>%LOCALAPPDATA%\FrameMind AI\logs</b>.</span></div>
+      </div>
+      <div class="start-side reveal from-right" style="--d:.15s">
+        <div class="finder no-tx" aria-hidden="true">
+          <div class="finder-bar"><i></i><i></i><i></i><span><svg class="ic"><use href="#i-box"/></svg>FrameMind-Portable</span></div>
+          <ul id="finderList">
+            <li class="dir"><svg class="ic"><use href="#i-box"/></svg>backend</li>
+            <li class="dir"><svg class="ic"><use href="#i-box"/></svg>scripts</li>
+            <li class="dir"><svg class="ic"><use href="#i-box"/></svg>submission</li>
+            <li><svg class="ic"><use href="#i-info"/></svg>README.md</li>
+            <li><svg class="ic"><use href="#i-info"/></svg>README-Windows.md</li>
+            <li data-f="win-start"><svg class="ic"><use href="#i-terminal"/></svg>Start FrameMind.bat<span class="tap">double-click</span></li>
+            <li data-f="mac-start"><svg class="ic"><use href="#i-terminal"/></svg>Start FrameMind.command<span class="tap">double-click</span></li>
+            <li data-f="win-stop"><svg class="ic"><use href="#i-terminal"/></svg>Stop FrameMind.bat</li>
+            <li data-f="mac-stop"><svg class="ic"><use href="#i-terminal"/></svg>Stop FrameMind.command</li>
+          </ul>
+        </div>
+        <div class="card side-card"><svg class="ic"><use href="#i-pause"/></svg><div><h4>Stopping</h4><p>Press <kbd>Ctrl</kbd> + <kbd>C</kbd> in the launcher window, close the window, or double-click <b>Stop FrameMind</b>.</p></div></div>
+        <div class="card side-card"><svg class="ic"><use href="#i-database"/></svg><div><h4>Where your data is saved</h4><p>Outside the app folder, so moving or replacing the folder keeps your sessions:</p><p class="mono">~/Library/Application Support/FrameMind AI</p><p class="mono">%LOCALAPPDATA%\FrameMind AI</p></div></div>
+        <div class="card side-card"><svg class="ic"><use href="#i-eye"/></svg><div><h4>Just want to look around?</h4><p>Open <b>submission/index.html</b> directly to load videos and match moments offline — no installation, but no saving and no AI.</p></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ====================================================== 09 CLOSING -->
 <section class="closing" id="vision" aria-labelledby="vision-title" style="padding-top:112px">
   <div class="container">
@@ -1292,8 +1402,8 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
         <div><em>Next</em><b>Reports &amp; history</b><small>Full job history, Markdown / JSON export, then QA with real gameplay pairs.</small></div>
       </div>
       <div class="run">
-        <span><svg class="ic"><use href="#i-terminal"/></svg>Start FrameMind.command <small>macOS</small></span>
-        <span><svg class="ic"><use href="#i-terminal"/></svg>Start FrameMind.bat <small>Windows · experimental</small></span>
+        <a href="#get-started" style="text-decoration:none"><span><svg class="ic"><use href="#i-terminal"/></svg>Start FrameMind.command <small>macOS</small></span></a>
+        <a href="#get-started" style="text-decoration:none"><span><svg class="ic"><use href="#i-terminal"/></svg>Start FrameMind.bat <small>Windows · experimental</small></span></a>
       </div>
     </div>
   </div>
@@ -1318,7 +1428,6 @@ var I18N = {
 "Benefits": "Lợi ích",
 "Technology": "Công nghệ",
 "Limitations": "Giới hạn",
-"See the product": "Xem sản phẩm",
 "<b>AI Tool<\/b> Gameplay comparison for Unity teams": "<b>AI Tool<\/b> So sánh gameplay cho team Unity",
 "Turn gameplay comparisons into actionable feedback": "Biến việc so sánh gameplay thành phản hồi có thể hành động ngay",
 "Compare a reference video with your current Unity gameplay, match the moments that belong together — even when they happen at different timestamps — and ask a local AI for structured visual feedback with Unity-specific fixes.": "So sánh video tham chiếu với gameplay Unity hiện tại, ghép những khoảnh khắc tương ứng — kể cả khi chúng xảy ra ở các mốc thời gian khác nhau — và nhờ AI chạy trên máy đưa ra phản hồi hình ảnh có cấu trúc kèm cách sửa cụ thể trong Unity.",
@@ -1537,7 +1646,38 @@ var I18N = {
 "Reports &amp; history": "Báo cáo &amp; lịch sử",
 "Full job history, Markdown / JSON export, then QA with real gameplay pairs.": "Lịch sử đầy đủ các lần phân tích, xuất Markdown / JSON, sau đó QA với các cặp gameplay thật.",
 "Windows · experimental": "Windows · thử nghiệm",
-"Product introduction · content reflects the implementation as of October 30, 2026.": "Giới thiệu sản phẩm · nội dung phản ánh trạng thái triển khai tính đến ngày 30/10/2026."
+"Product introduction · content reflects the implementation as of October 30, 2026.": "Giới thiệu sản phẩm · nội dung phản ánh trạng thái triển khai tính đến ngày 30/10/2026.",
+"Get started": "Bắt đầu sử dụng",
+"Run FrameMind AI on your computer": "Chạy FrameMind AI trên máy của bạn",
+"Extract one ZIP and double-click the Start file. The launcher checks what your computer is missing and asks before installing anything.": "Giải nén một file ZIP rồi double-click file Start. Launcher tự kiểm tra máy còn thiếu gì và luôn hỏi trước khi cài bất cứ thứ gì.",
+"Extract the ZIP": "Giải nén file ZIP",
+"Double-click <b>FrameMind-Portable.zip<\/b>. You can move the <b>FrameMind-Portable<\/b> folder anywhere — paths with spaces work.": "Double-click <b>FrameMind-Portable.zip<\/b>. Bạn có thể để thư mục <b>FrameMind-Portable<\/b> ở bất cứ đâu — đường dẫn có dấu cách vẫn chạy được.",
+"Double-click Start FrameMind.command": "Double-click Start FrameMind.command",
+"A Terminal window opens and checks Python, FFmpeg and Codex CLI.": "Một cửa sổ Terminal mở ra và kiểm tra Python, FFmpeg và Codex CLI.",
+"Allow it the first time": "Cho phép chạy ở lần đầu",
+"macOS may say the file cannot be opened, because the launcher is a script and not a signed app. You only do this once:": "macOS có thể báo không mở được file, vì launcher là một script chứ không phải ứng dụng có chữ ký. Bạn chỉ cần làm việc này một lần:",
+"<b>macOS 15 and newer:<\/b> click <b>Done<\/b>, then open <b>System Settings → Privacy &amp; Security<\/b> and click <b>Open Anyway<\/b>.": "<b>macOS 15 trở lên:<\/b> bấm <b>Done<\/b>, rồi mở <b>System Settings → Privacy &amp; Security<\/b> và bấm <b>Open Anyway<\/b>.",
+"<b>macOS 12–14:<\/b> Control-click the file, choose <b>Open<\/b>, then click <b>Open<\/b> again.": "<b>macOS 12–14:<\/b> giữ Control và bấm vào file, chọn <b>Open<\/b>, rồi bấm <b>Open<\/b> thêm lần nữa.",
+"Install what is missing": "Cài những gì còn thiếu",
+"For each missing tool the launcher explains what it is and asks first. Type <kbd>y<\/kbd> and press <kbd>Return<\/kbd>. The first launch needs internet and takes a few minutes; later launches start in seconds.": "Với mỗi công cụ còn thiếu, launcher giải thích nó là gì và hỏi trước. Gõ <kbd>y<\/kbd> rồi nhấn <kbd>Return<\/kbd>. Lần chạy đầu cần internet và mất vài phút; những lần sau khởi động trong vài giây.",
+"Codex CLI (optional)": "Codex CLI (không bắt buộc)",
+"Use the app": "Sử dụng ứng dụng",
+"Your browser opens FrameMind AI, already connected to the backend. Keep the Terminal window open while you work.": "Trình duyệt mở FrameMind AI, đã kết nối sẵn với backend. Giữ cửa sổ Terminal mở trong lúc làm việc.",
+"Sign in for AI analysis": "Đăng nhập để phân tích AI",
+"Open <b>Settings → AI Provider → Login with ChatGPT<\/b>. Only needed once per computer.": "Mở <b>Settings → AI Provider → Login with ChatGPT<\/b>. Mỗi máy chỉ cần làm một lần.",
+"Right-click <b>FrameMind-Portable.zip<\/b> and choose <b>Extract All…<\/b>. Running it from inside the ZIP does not work.": "Chuột phải vào <b>FrameMind-Portable.zip<\/b> và chọn <b>Extract All…<\/b>. Chạy trực tiếp bên trong file ZIP sẽ không được.",
+"Double-click Start FrameMind.bat": "Double-click Start FrameMind.bat",
+"A console window opens and checks Python, FFmpeg and Codex CLI.": "Một cửa sổ console mở ra và kiểm tra Python, FFmpeg và Codex CLI.",
+"If Windows shows <b>Windows protected your PC<\/b>, click <b>More info → Run anyway<\/b>. You only do this once.": "Nếu Windows hiện <b>Windows protected your PC<\/b>, bấm <b>More info → Run anyway<\/b>. Bạn chỉ cần làm một lần.",
+"Tools are installed with winget (Codex CLI with npm) after you type <kbd>y<\/kbd> and press <kbd>Enter<\/kbd>. If a tool is still \"not found\" right after installing, close the window and start again.": "Các công cụ được cài bằng winget (Codex CLI bằng npm) sau khi bạn gõ <kbd>y<\/kbd> và nhấn <kbd>Enter<\/kbd>. Nếu vừa cài xong mà vẫn báo \"not found\", hãy đóng cửa sổ và chạy lại.",
+"Your browser opens FrameMind AI, already connected to the backend. Keep the black window open while you work.": "Trình duyệt mở FrameMind AI, đã kết nối sẵn với backend. Giữ cửa sổ màu đen mở trong lúc làm việc.",
+"The Windows launcher has not been run on a real Windows PC yet. If something fails, the window shows the error and the log is in <b>%LOCALAPPDATA%\\FrameMind AI\\logs<\/b>.": "Launcher Windows chưa được chạy trên máy Windows thật. Nếu có lỗi, cửa sổ sẽ hiện thông báo lỗi và log nằm ở <b>%LOCALAPPDATA%\\FrameMind AI\\logs<\/b>.",
+"Stopping": "Dừng ứng dụng",
+"Press <kbd>Ctrl<\/kbd> + <kbd>C<\/kbd> in the launcher window, close the window, or double-click <b>Stop FrameMind<\/b>.": "Nhấn <kbd>Ctrl<\/kbd> + <kbd>C<\/kbd> trong cửa sổ launcher, đóng cửa sổ, hoặc double-click <b>Stop FrameMind<\/b>.",
+"Where your data is saved": "Dữ liệu được lưu ở đâu",
+"Outside the app folder, so moving or replacing the folder keeps your sessions:": "Nằm ngoài thư mục ứng dụng, nên di chuyển hay thay thư mục vẫn giữ nguyên các phiên:",
+"Just want to look around?": "Chỉ muốn xem thử?",
+"Open <b>submission/index.html<\/b> directly to load videos and match moments offline — no installation, but no saving and no AI.": "Mở trực tiếp <b>submission/index.html<\/b> để mở video và ghép khoảnh khắc offline — không cần cài đặt, nhưng không lưu dữ liệu và không có AI."
 },
 "ko": {
 "Problem": "문제",
@@ -1547,7 +1687,6 @@ var I18N = {
 "Benefits": "기대 효과",
 "Technology": "기술",
 "Limitations": "한계",
-"See the product": "제품 보기",
 "<b>AI Tool<\/b> Gameplay comparison for Unity teams": "<b>AI Tool<\/b> Unity 팀을 위한 게임플레이 비교",
 "Turn gameplay comparisons into actionable feedback": "게임플레이 비교를 바로 실행할 수 있는 피드백으로",
 "Compare a reference video with your current Unity gameplay, match the moments that belong together — even when they happen at different timestamps — and ask a local AI for structured visual feedback with Unity-specific fixes.": "레퍼런스 영상과 현재 Unity 게임플레이를 비교하고, 서로 다른 타임스탬프에서 일어나더라도 같은 순간끼리 짝지은 뒤, 로컬 AI에게 Unity 수정 방법이 담긴 구조화된 비주얼 피드백을 받으세요.",
@@ -1766,7 +1905,38 @@ var I18N = {
 "Reports &amp; history": "보고서 &amp; 기록",
 "Full job history, Markdown / JSON export, then QA with real gameplay pairs.": "전체 작업 기록, Markdown / JSON 내보내기, 이후 실제 게임플레이 쌍으로 QA.",
 "Windows · experimental": "Windows · 실험적",
-"Product introduction · content reflects the implementation as of October 30, 2026.": "제품 소개 · 2026년 10월 30일 기준 구현 내용을 반영합니다."
+"Product introduction · content reflects the implementation as of October 30, 2026.": "제품 소개 · 2026년 10월 30일 기준 구현 내용을 반영합니다.",
+"Get started": "시작하기",
+"Run FrameMind AI on your computer": "내 컴퓨터에서 FrameMind AI 실행하기",
+"Extract one ZIP and double-click the Start file. The launcher checks what your computer is missing and asks before installing anything.": "ZIP 파일 하나를 풀고 Start 파일을 더블 클릭하세요. 런처가 컴퓨터에 없는 것을 확인하고, 무엇이든 설치하기 전에 먼저 물어봅니다.",
+"Extract the ZIP": "ZIP 압축 풀기",
+"Double-click <b>FrameMind-Portable.zip<\/b>. You can move the <b>FrameMind-Portable<\/b> folder anywhere — paths with spaces work.": "<b>FrameMind-Portable.zip<\/b>을 더블 클릭하세요. <b>FrameMind-Portable<\/b> 폴더는 어디로 옮겨도 되며, 공백이 있는 경로도 동작합니다.",
+"Double-click Start FrameMind.command": "Start FrameMind.command 더블 클릭",
+"A Terminal window opens and checks Python, FFmpeg and Codex CLI.": "터미널 창이 열리고 Python, FFmpeg, Codex CLI를 확인합니다.",
+"Allow it the first time": "처음 한 번 실행 허용",
+"macOS may say the file cannot be opened, because the launcher is a script and not a signed app. You only do this once:": "런처는 서명된 앱이 아닌 스크립트라서 macOS가 파일을 열 수 없다고 표시할 수 있습니다. 한 번만 하면 됩니다:",
+"<b>macOS 15 and newer:<\/b> click <b>Done<\/b>, then open <b>System Settings → Privacy &amp; Security<\/b> and click <b>Open Anyway<\/b>.": "<b>macOS 15 이상:<\/b> <b>완료<\/b>를 누른 뒤 <b>시스템 설정 → 개인정보 보호 및 보안<\/b>에서 <b>그래도 열기<\/b>를 누르세요.",
+"<b>macOS 12–14:<\/b> Control-click the file, choose <b>Open<\/b>, then click <b>Open<\/b> again.": "<b>macOS 12–14:<\/b> 파일을 Control-클릭해 <b>열기<\/b>를 선택한 뒤 다시 <b>열기<\/b>를 누르세요.",
+"Install what is missing": "없는 도구 설치",
+"For each missing tool the launcher explains what it is and asks first. Type <kbd>y<\/kbd> and press <kbd>Return<\/kbd>. The first launch needs internet and takes a few minutes; later launches start in seconds.": "없는 도구마다 런처가 무엇인지 설명하고 먼저 묻습니다. <kbd>y<\/kbd>를 입력하고 <kbd>Return<\/kbd>을 누르세요. 첫 실행은 인터넷이 필요하고 몇 분 걸리며, 이후에는 몇 초 만에 시작됩니다.",
+"Codex CLI (optional)": "Codex CLI (선택)",
+"Use the app": "앱 사용",
+"Your browser opens FrameMind AI, already connected to the backend. Keep the Terminal window open while you work.": "브라우저에서 백엔드에 이미 연결된 FrameMind AI가 열립니다. 작업하는 동안 터미널 창을 열어 두세요.",
+"Sign in for AI analysis": "AI 분석을 위한 로그인",
+"Open <b>Settings → AI Provider → Login with ChatGPT<\/b>. Only needed once per computer.": "<b>Settings → AI Provider → Login with ChatGPT<\/b>를 여세요. 컴퓨터마다 한 번만 하면 됩니다.",
+"Right-click <b>FrameMind-Portable.zip<\/b> and choose <b>Extract All…<\/b>. Running it from inside the ZIP does not work.": "<b>FrameMind-Portable.zip<\/b>을 마우스 오른쪽 버튼으로 클릭하고 <b>압축 풀기…<\/b>를 선택하세요. ZIP 안에서 바로 실행하면 동작하지 않습니다.",
+"Double-click Start FrameMind.bat": "Start FrameMind.bat 더블 클릭",
+"A console window opens and checks Python, FFmpeg and Codex CLI.": "콘솔 창이 열리고 Python, FFmpeg, Codex CLI를 확인합니다.",
+"If Windows shows <b>Windows protected your PC<\/b>, click <b>More info → Run anyway<\/b>. You only do this once.": "<b>Windows의 PC 보호<\/b> 창이 나타나면 <b>추가 정보 → 실행<\/b>을 누르세요. 한 번만 하면 됩니다.",
+"Tools are installed with winget (Codex CLI with npm) after you type <kbd>y<\/kbd> and press <kbd>Enter<\/kbd>. If a tool is still \"not found\" right after installing, close the window and start again.": "<kbd>y<\/kbd>를 입력하고 <kbd>Enter<\/kbd>를 누르면 winget으로(Codex CLI는 npm으로) 도구가 설치됩니다. 설치 직후에도 \"not found\"가 나오면 창을 닫고 다시 실행하세요.",
+"Your browser opens FrameMind AI, already connected to the backend. Keep the black window open while you work.": "브라우저에서 백엔드에 이미 연결된 FrameMind AI가 열립니다. 작업하는 동안 검은 창을 열어 두세요.",
+"The Windows launcher has not been run on a real Windows PC yet. If something fails, the window shows the error and the log is in <b>%LOCALAPPDATA%\\FrameMind AI\\logs<\/b>.": "Windows 런처는 아직 실제 Windows PC에서 실행해 보지 않았습니다. 문제가 생기면 창에 오류가 표시되며, 로그는 <b>%LOCALAPPDATA%\\FrameMind AI\\logs<\/b>에 있습니다.",
+"Stopping": "종료하기",
+"Press <kbd>Ctrl<\/kbd> + <kbd>C<\/kbd> in the launcher window, close the window, or double-click <b>Stop FrameMind<\/b>.": "런처 창에서 <kbd>Ctrl<\/kbd> + <kbd>C<\/kbd>를 누르거나, 창을 닫거나, <b>Stop FrameMind<\/b>를 더블 클릭하세요.",
+"Where your data is saved": "데이터 저장 위치",
+"Outside the app folder, so moving or replacing the folder keeps your sessions:": "앱 폴더 밖에 저장되므로 폴더를 옮기거나 교체해도 세션이 유지됩니다:",
+"Just want to look around?": "그냥 둘러보고 싶다면?",
+"Open <b>submission/index.html<\/b> directly to load videos and match moments offline — no installation, but no saving and no AI.": "<b>submission/index.html<\/b>을 바로 열어 오프라인으로 영상을 불러오고 장면을 매칭할 수 있습니다. 설치는 필요 없지만 저장과 AI는 사용할 수 없습니다."
 }
 };
 </script>
@@ -2019,10 +2189,39 @@ var I18N = {
     });
   })();
 
+  /* ---------- Get started: macOS / Windows tabs ---------- */
+  (function () {
+    var tabs = $$('#get-started [role="tab"]'); if (!tabs.length) return;
+    var rows = $$("#finderList li"), winNote = $("#winNote");
+    function select(os, focus) {
+      tabs.forEach(function (t) {
+        var on = t.getAttribute("data-os") === os;
+        t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+        if (on && focus) t.focus();
+      });
+      winNote.hidden = os !== "win";
+      rows.forEach(function (r) {
+        var f = r.getAttribute("data-f") || "";
+        r.classList.toggle("hot", f === os + "-start");
+        r.classList.toggle("dim", f !== "" && f.indexOf(os + "-") !== 0);
+      });
+    }
+    tabs.forEach(function (t, i) {
+      t.addEventListener("click", function () { select(t.getAttribute("data-os")); });
+      t.addEventListener("keydown", function (e) {
+        if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+        e.preventDefault();
+        select(tabs[(i + (e.key === "ArrowRight" ? 1 : tabs.length - 1)) % tabs.length].getAttribute("data-os"), true);
+      });
+    });
+    select(/Win/i.test(navigator.platform || navigator.userAgent) ? "win" : "mac");
+  })();
+
   /* ---------- Page language (EN is the HTML itself; VI / KO come from I18N below) ---------- */
   (function () {
-    var INLINE = { B: 1, STRONG: 1, CODE: 1, BR: 1 };
-    var SKIP = ".app, svg, script, style, .lang-switch, .brand";
+    var INLINE = { B: 1, STRONG: 1, CODE: 1, BR: 1, KBD: 1 };
+    var SKIP = ".app, .no-tx, svg, script, style, .lang-switch, .brand";
     function isInline(n) { return n.nodeType === 3 || (n.nodeType === 1 && (INLINE[n.tagName] || (n.tagName === "SPAN" && n.classList.contains("mono")))); }
     function norm(h) { return h.replace(/\s+/g, " ").trim(); }
     // Wrap every run of text (+ inline formatting) in <span class="tx">, so it can be swapped as one sentence.
