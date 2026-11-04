@@ -17,20 +17,21 @@ die() { printf 'build_portable: %s\n' "$*" >&2; exit 1; }
 rm -rf "$STAGE" "$ZIP"
 mkdir -p "$STAGE/submission" "$STAGE/backend" "$STAGE/scripts/windows" || die "cannot create $STAGE"
 
-cp "$REPO/Start FrameMind.command" "$REPO/Stop FrameMind.command" "$STAGE/"
-cp "$REPO/Start FrameMind.bat" "$REPO/Stop FrameMind.bat" "$STAGE/"
+cp "$REPO/Start FrameMind.command" "$REPO/Stop FrameMind.command" "$REPO/Reset FrameMind.command" "$STAGE/"
+cp "$REPO/Open Security Settings.webloc" "$STAGE/"  # opens Privacy & Security when macOS blocks the launcher
+cp "$REPO/Start FrameMind.bat" "$REPO/Stop FrameMind.bat" "$REPO/Reset FrameMind.bat" "$STAGE/"
 cp "$REPO/submission/index.html" "$STAGE/submission/"
 cp "$REPO/backend/requirements.txt" "$STAGE/backend/"
 rsync -a --exclude '__pycache__/' --exclude '*.pyc' --exclude '.DS_Store' "$REPO/backend/app" "$STAGE/backend/"
-for script in common.sh check_dependencies.sh setup.sh start_backend.sh stop_backend.sh; do
+for script in common.sh check_dependencies.sh setup.sh start_backend.sh stop_backend.sh reset.sh; do
   cp "$REPO/scripts/$script" "$STAGE/scripts/"
 done
-for script in common.ps1 start.ps1 stop.ps1; do
+for script in common.ps1 start.ps1 stop.ps1 reset.ps1; do
   cp "$REPO/scripts/windows/$script" "$STAGE/scripts/windows/"
 done
 cp "$REPO/docs/PORTABLE.md" "$STAGE/README.md"
 cp "$REPO/docs/PORTABLE-WINDOWS.md" "$STAGE/README-Windows.md"
-chmod 755 "$STAGE/Start FrameMind.command" "$STAGE/Stop FrameMind.command" "$STAGE"/scripts/*.sh
+chmod 755 "$STAGE/Start FrameMind.command" "$STAGE/Stop FrameMind.command" "$STAGE/Reset FrameMind.command" "$STAGE"/scripts/*.sh
 
 # Nothing private may ship.
 forbidden="$(find "$STAGE" \( -name '.env' -o -name '.env.*' -o -name '*.db' -o -name '*.sqlite*' -o -name 'auth.json' \

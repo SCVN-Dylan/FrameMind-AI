@@ -195,7 +195,11 @@ mirrors the Next.js UI: Dashboard, New Analysis, History and Settings, in EN / V
 
 1. Checks macOS (12+, Apple Silicon or Intel), the app files, Python 3.9–3.13 and FFmpeg; Codex CLI is optional.
    Anything missing is explained and installed only after a `y` (Homebrew: official installer; then
-   `brew install python@3.12` / `ffmpeg` / `--cask codex`). No `sudo`, no `eval`.
+   `brew install python@3.12` / `ffmpeg`). No `sudo`, no `eval`. Codex CLI is FrameMind's own copy of the
+   latest release: the official npm package for the platform, checked against the registry's SHA-512, extracted to
+   `runtime/codex/<version>` and updated at each start (the first download asks; a failed update keeps the current
+   copy). Without it, the `codex` on PATH is used. If a Codex version cannot start with FrameMind's own permission
+   profile, the backend retries once with Codex's built-in `:read-only` profile and keeps it for that version.
 2. Creates a virtual environment in `~/Library/Application Support/FrameMind AI/runtime/venv` from
    `backend/requirements.txt` (reused while requirements and Python are unchanged).
 3. Starts `uvicorn app.main:app` on `127.0.0.1:8000` with `STORAGE_DIR` set to that folder (database, videos, frames,
@@ -206,6 +210,10 @@ mirrors the Next.js UI: Dashboard, New Analysis, History and Settings, in EN / V
    through `localStorage` (shared by its file:// pages).
 5. Keeps running until Control-C, the window is closed, or `Stop FrameMind.command` — then stops only its own backend.
 
+`Reset FrameMind.command` (`scripts/reset.sh`; Windows: `Reset FrameMind.bat` → `scripts/windows/reset.ps1`) stops the
+backend, then removes either `runtime/` (venv and Codex; data kept) or, after typing `DELETE`, the whole data folder. It
+only deletes a folder named `FrameMind AI`, and never touches Homebrew/winget tools or `~/.codex`.
+
 Build the ZIP with `scripts/build_portable.sh` (→ `dist/FrameMind-Portable.zip`, git-ignored; only runtime files, checked
 for private files). Test with `scripts/tests/test_launcher.sh` (mocks for installations; a real backend and venv in a
 throwaway folder). End-user instructions: [docs/PORTABLE.md](docs/PORTABLE.md) (shipped as the package's README).
@@ -215,8 +223,8 @@ throwaway folder). End-user instructions: [docs/PORTABLE.md](docs/PORTABLE.md) (
 The same ZIP also contains `Start FrameMind.bat` / `Stop FrameMind.bat`, which run `scripts/windows/start.ps1` /
 `stop.ps1` with the built-in Windows PowerShell 5.1 (`-ExecutionPolicy Bypass` for that run only). The steps mirror the
 macOS launcher: Python 3.9–3.13 (`winget install Python.Python.3.12 --scope user`), FFmpeg (`winget install
-Gyan.FFmpeg`) and optionally Codex CLI (`npm install -g @openai/codex@latest`, Node.js LTS through winget if npm is
-missing; Codex older than 0.165.0 is offered an update), each only after a `y`; the venv and data live in
+Gyan.FFmpeg`) and optionally FrameMind's own, auto-updated Codex CLI (downloaded and checked like on macOS,
+extracted with the built-in `tar.exe`), each only after a `y`; the venv and data live in
 `%LOCALAPPDATA%\FrameMind AI`. The backend runs in the launcher's console, so Ctrl+C or closing the window stops it;
 `Stop FrameMind.bat` stops it after checking the PID file, the venv interpreter path and `/api/health`. On Windows the
 backend stops Codex with `taskkill /T /F` (no process groups) instead of `killpg`. The scripts must stay ASCII with

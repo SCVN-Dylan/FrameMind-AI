@@ -1,7 +1,8 @@
 # FrameMind AI for Windows: run by "Start FrameMind.bat".
 #
-# First launch: checks this PC, offers to install what is missing (asks before each installation, using
-# winget and npm), creates a private Python environment, then starts the local backend and opens the app.
+# First launch: checks this PC, offers to install what is missing (asks before each installation: winget
+# for tools, plus a download of FrameMind's own, auto-updated Codex CLI), creates a private Python environment, then
+# starts the local backend and opens the app.
 # Later launches reuse everything that is already set up.
 #
 # Keep the window open while using FrameMind AI. Control-C, closing the window, or "Stop FrameMind.bat"
@@ -67,50 +68,111 @@ function Test-FFmpeg {
   Ok "FFmpeg: $ffmpeg"
 }
 
-# $Question: "Install Codex CLI now?" or "Update Codex CLI now?"
-function Install-CodexWithNpm([string]$Question) {
-  $npm = Find-Program 'npm'
-  if (-not $npm) {
-    Warn 'Codex CLI is installed with npm, which comes with Node.js.'
-    Install-WithWinget 'Node.js LTS' 'OpenJS.NodeJS.LTS' @() | Out-Null
-    $npm = Find-Program 'npm'
-    if (-not $npm) { Warn 'npm is still not available. If Node.js was just installed, start FrameMind AI again.'; return }
+# The latest Codex CLI release on the npm registry, or $null when offline.
+function Get-LatestCodexVersion {
+  try {
+    $info = Invoke-RestMethod -Uri "$CodexRegistry/@openai/codex/latest" -UseBasicParsing -TimeoutSec 10
+  } catch { return $null }
+  if ("$($info.version)" -match '^\d+\.\d+\.\d+$') { return "$($info.version)" }
+  return $null
+}
+
+# Downloads Codex CLI $Version (OpenAI's official npm package for this PC, checked against the SHA-512 the
+# registry publishes for it) into runtime\codex\<version> and makes it the one in use. Older copies are deleted
+# only after the new one is ready, so a failed download keeps the current copy. Returns $true on success.
+function Install-OwnCodex([string]$Version) {
+  $platform = Get-CodexPlatform
+  try {
+    $info = Invoke-RestMethod -Uri "$CodexRegistry/@openai/codex/$Version-$($platform.Platform)" -UseBasicParsing -TimeoutSec 15
+    $integrity = "$($info.dist.integrity)"
+  } catch { $integrity = '' }
+  if ($integrity -notmatch '^sha512-') { Warn "Could not read the details of Codex CLI $Version from the npm registry."; return $false }
+  $tar = Join-Path $env:SystemRoot 'System32\tar.exe'
+  if (-not (Test-Path -LiteralPath $tar)) { Warn 'tar.exe was not found (it comes with Windows 10 1803 and newer).'; return $false }
+  New-Item -ItemType Directory -Force -Path $CodexHomeDir | Out-Null
+  $work = Join-Path $CodexHomeDir ('.download.' + [guid]::NewGuid().ToString('N'))
+  New-Item -ItemType Directory -Path $work | Out-Null
+  try {
+    $tgz = Join-Path $work 'codex.tgz'
+    Info 'Downloading...'
+    try {
+      $ProgressPreference = 'SilentlyContinue'  # the progress bar makes Windows PowerShell 5.1 download very slowly
+      Invoke-WebRequest -Uri "$CodexRegistry/@openai/codex/-/codex-$Version-$($platform.Platform).tgz" -OutFile $tgz -UseBasicParsing
+    } catch {
+      Warn "Codex CLI $Version could not be downloaded: $($_.Exception.Message)"
+      return $false
+    }
+    $sha = [Security.Cryptography.SHA512]::Create()
+    $stream = [IO.File]::OpenRead($tgz)
+    try { $actual = 'sha512-' + [Convert]::ToBase64String($sha.ComputeHash($stream)) } finally { $stream.Dispose(); $sha.Dispose() }
+    if ($actual -ne $integrity) { Warn "The downloaded Codex CLI does not match the registry's checksum, so it was deleted."; return $false }
+    & $tar -xzf $tgz -C $work "package/vendor/$($platform.Target)"
+    $extracted = Join-Path $work "package\vendor\$($platform.Target)"
+    if ($LASTEXITCODE -ne 0 -or -not (Get-CodexVersion (Join-Path $extracted 'bin\codex.exe'))) {
+      Warn "The Codex CLI $Version package could not be extracted or does not run."
+      return $false
+    }
+    $target = Join-Path $CodexHomeDir $Version
+    if (Test-Path -LiteralPath $target) { Remove-Item -LiteralPath $target -Recurse -Force }
+    Move-Item -LiteralPath $extracted -Destination $target
+    Set-Content -LiteralPath $CodexCurrentFile -Value $Version -Encoding ASCII
+    Get-ChildItem -LiteralPath $CodexHomeDir -Directory |
+      Where-Object { $_.Name -ne $Version -and -not $_.Name.StartsWith('.') } |
+      Remove-Item -Recurse -Force
+    return $true
+  } finally {
+    Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
   }
-  Info 'Command: npm install -g @openai/codex@latest'
-  if (-not (Ask-YesNo $Question)) { Warn 'Codex CLI was not changed.'; return }
-  & $npm install -g '@openai/codex@latest' | Out-Host
-  if ($LASTEXITCODE -ne 0) { Warn 'npm could not install Codex CLI.' }
-  Update-SessionPath
+}
+
+# First run: offers to download FrameMind's own Codex CLI. Later runs: updates it to the latest release
+# (automatic, as agreed at the first download), or keeps the current copy when offline.
+function Update-OwnCodex {
+  [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+  $current = Get-OwnCodexVersion
+  $latest = Get-LatestCodexVersion
+  if (-not $latest) {
+    if ($current) { Info "Could not check for a newer Codex CLI (offline?). Using $current." }
+    else { Warn 'Could not reach the npm registry to download Codex CLI (offline?).' }
+    return
+  }
+  if ($latest -eq $current) { return }
+  if (-not $current) {
+    Info 'FrameMind AI keeps its own copy of Codex CLI, the official OpenAI package (about 200 MB), in'
+    Info "$CodexHomeDir. It is updated to the latest release each time FrameMind AI starts,"
+    Info 'and uses the same ChatGPT sign-in. Any other Codex on this PC is not changed.'
+    if (-not (Ask-YesNo "Download Codex CLI $latest for FrameMind AI now?")) { Warn 'Codex CLI was not downloaded.'; return }
+  } else {
+    Info "Updating FrameMind AI's Codex CLI: $current -> $latest"
+  }
+  if (Install-OwnCodex $latest) { Ok "Codex CLI $latest downloaded." }
+  elseif ($current) { Info "Keeping Codex CLI $current." }
 }
 
 # Codex is optional: without it FrameMind AI still opens, with AI analysis shown as disconnected.
 function Get-OptionalCodex {
+  Update-OwnCodex
   $codex = Find-Codex
   if (-not $codex) {
     Warn 'Codex CLI was not found. It runs FrameMind AI analysis with your ChatGPT account.'
-    Install-CodexWithNpm 'Install Codex CLI now?'
-    $codex = Find-Codex
-    if (-not $codex) {
-      Warn 'Continuing without Codex CLI: the app opens, AI analysis stays disconnected.'
-      Info 'Install later with: npm install -g @openai/codex'
-      return $null
-    }
+    Warn 'Continuing without Codex CLI: the app opens, AI analysis stays disconnected.'
+    Info 'Start FrameMind AI again and answer y to download it.'
+    return $null
   }
   $version = Get-CodexVersion $codex
-  if ($version -and $version -lt $MinCodexVersion) {
-    Warn "Codex CLI $version is too old for FrameMind AI ($MinCodexVersion or newer is needed)."
-    Install-CodexWithNpm 'Update Codex CLI now?'
-    $codex = Find-Codex
-    $version = Get-CodexVersion $codex
-  }
   if (-not $version) {
     Warn "Codex CLI at $codex did not answer 'codex --version'. AI analysis may not work."
     return $codex
   }
-  if ($version -lt $MinCodexVersion) {
-    Warn "Codex CLI $version is still too old: AI analysis will not run until it is updated (npm install -g @openai/codex@latest)."
+  if ($codex.StartsWith($CodexHomeDir + '\', [StringComparison]::OrdinalIgnoreCase)) {
+    Ok "Codex CLI $version (FrameMind AI's own copy)"
   } else {
     Ok "Codex CLI ${version}: $codex"
+    Info 'This is the Codex installed on this PC. Start FrameMind AI again and answer y to use its own copy,'
+    Info 'which FrameMind AI keeps up to date.'
+    if ($version -lt $MinCodexVersion) {
+      Warn "Codex CLI $version is too old: AI analysis will not run with it ($MinCodexVersion or newer is needed)."
+    }
   }
   # Only the sign-in mode is shown; the raw output can contain a masked key and is not printed.
   $status = (& $codex login status 2>&1 | Out-String).ToLowerInvariant()

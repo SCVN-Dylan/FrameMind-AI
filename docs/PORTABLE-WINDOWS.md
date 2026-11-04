@@ -17,14 +17,13 @@ Files from the internet may show **"Windows protected your PC"** (SmartScreen), 
 
 ## What the launcher installs
 
-It only installs what the PC is missing, and only after you answer `y`. It uses **winget** (App Installer, built into Windows 10 2004+ and Windows 11). Installing Node.js may show a Windows permission prompt.
+It only installs what the PC is missing, and only after you answer `y`. It uses **winget** (App Installer, built into Windows 10 2004+ and Windows 11). Node.js is not needed.
 
 | Tool | Why | How it is installed |
 | --- | --- | --- |
 | Python 3.9–3.13 | Runs the backend | `winget install --id Python.Python.3.12 --exact --scope user` |
 | FFmpeg | Reads videos and extracts frames | `winget install --id Gyan.FFmpeg --exact` |
-| Node.js LTS (only for Codex) | Provides `npm`, which installs Codex CLI | `winget install --id OpenJS.NodeJS.LTS --exact` |
-| Codex CLI (optional) | AI analysis with your ChatGPT account | `npm install -g @openai/codex@latest`. Versions older than 0.165.0 are offered an update. |
+| Codex CLI (optional) | AI analysis with your ChatGPT account | FrameMind AI downloads **its own copy** of the latest release (OpenAI's official package from the npm registry, about 200 MB, checked against the registry's SHA-512) into `runtime\codex`. Each later start updates it without asking, and keeps the current copy if the update fails. Any other Codex on the PC is not affected, and it uses the same ChatGPT sign-in. |
 | Python packages | The backend's libraries (`backend\requirements.txt`) | Installed into a private virtual environment, never into the system Python |
 
 The first launch needs internet and takes a few minutes. If a tool was just installed and is still "not found", close the window and start again, because Windows sometimes only updates PATH for new windows. If you skip Codex CLI, FrameMind AI still opens, and AI analysis shows as disconnected.
@@ -44,6 +43,8 @@ The first launch needs internet and takes a few minutes. If a tool was just inst
 
 Moving, replacing or deleting the app folder does not touch this data. To start over, use **Settings → Data Management → Clear All Data**.
 
+To set FrameMind AI up again from scratch, double-click **`Reset FrameMind.bat`**. It stops FrameMind AI, then asks: **1** removes `runtime\` (the Python environment and FrameMind AI's Codex CLI) and keeps your data; **2** deletes the whole folder (type `DELETE` to confirm; it cannot be undone). winget tools, any other Codex and your ChatGPT sign-in are never touched.
+
 ## Stopping
 
 Any of these stops the backend: press **Ctrl+C** in the FrameMind window, close the window, or double-click **`Stop FrameMind.bat`**. Only the backend that the launcher started is stopped.
@@ -59,7 +60,7 @@ Any of these stops the backend: press **Ctrl+C** in the FrameMind window, close 
 | *The backend did not answer its health check* | Read the lines printed under the error, or `logs\backend.err.log`. |
 | The page shows **AI Backend Offline** | The FrameMind window was closed. Start it again. |
 | *Codex exited with an error* | Run `codex exec --skip-git-repo-check "say hi"` in a terminal to see Codex's own message (sign-in expired, usage limit, network). |
-| Python environment errors | Delete `%LOCALAPPDATA%\FrameMind AI\runtime` and start again. Your data is kept. |
+| Python environment errors | Double-click `Reset FrameMind.bat`, choose **1**, then start again. Your data is kept. |
 
 ## Known limitations
 

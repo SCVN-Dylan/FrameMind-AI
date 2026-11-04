@@ -115,8 +115,10 @@ def codex(monkeypatch):
     monkeypatch.setattr(codex_module, "_killpg", lambda pid, sig: fake.killed.append(sig))
     codex_module.codex_cli._probe = None
     codex_module.codex_cli.last_error = None
+    codex_module.codex_cli._builtin_profile_versions.clear()
     yield fake
     codex_module.codex_cli._probe = None
+    codex_module.codex_cli._builtin_profile_versions.clear()
 
 
 class _Inline:
@@ -456,6 +458,8 @@ def test_build_command_has_no_prompt_or_shell_and_reads_only_workdir(tmp_path):
     filesystem = next(arg for arg in cmd if ".filesystem=" in arg)
     assert '":root"="deny"' in filesystem and f'"{tmp_path.resolve()}"="read"' in filesystem
     assert 'approval_policy="never"' in cmd
+    # No AGENTS.md lookup, in the work folder or above it.
+    assert "project_root_markers=[]" in cmd and "project_doc_max_bytes=0" in cmd
 
 
 def test_build_command_lets_codex_read_its_own_install(tmp_path):
@@ -491,6 +495,44 @@ def test_nonzero_exit_reports_codex_error_lines(client, codex, session, inline_j
     status = client.get(f"/api/analysis/{session['id']}/status").json()
     assert status["error_code"] == "codex_failed"
     assert "usage limit" in status["error_message"]
+
+
+SANDBOX_START_FAILURE = (
+    "ERROR codex_core::session: Failed to create session: failed to load AGENTS.md instructions for environment "
+    "`local`: fs sandbox helper failed with status exit status: 71: sandbox-exec: execvp() of '/x/codex' failed: "
+    "Operation not permitted\nError: thread/start: thread/start failed (code -32603)"
+)
+
+
+@needs_ffmpeg
+def test_sandbox_start_failure_retries_with_codex_builtin_profile(client, codex, session, inline_jobs):
+    # A new Codex version that cannot start with FrameMind's own profile falls back to Codex's built-in read-only
+    # one, and later runs with that version use it straight away.
+    def behaviour(cmd, prompt):
+        if 'default_permissions=":read-only"' in cmd:
+            return codex.good_answer(cmd, prompt)
+        return 1, None, SANDBOX_START_FAILURE
+
+    codex.exec_behaviour = behaviour
+    pair = _frame_pair(client, session)
+    _run(client, session, "single_frame", [pair["id"]])
+    assert client.get(f"/api/analysis/{session['id']}/status").json()["status"] == "completed"
+    assert len(codex.calls) == 2
+    retry = codex.calls[1]["cmd"]
+    assert "shell_tool" in retry and 'approval_policy="never"' in retry and 'web_search="disabled"' in retry
+    assert not any(".filesystem=" in arg for arg in retry)
+
+    _run(client, session, "single_frame", [pair["id"]])
+    assert len(codex.calls) == 3 and 'default_permissions=":read-only"' in codex.calls[2]["cmd"]
+
+
+@needs_ffmpeg
+def test_other_codex_failures_are_not_retried(client, codex, session, inline_jobs):
+    codex.exec_behaviour = lambda cmd, prompt: (1, None, "ERROR: You've hit your usage limit.")
+    pair = _frame_pair(client, session)
+    _run(client, session, "single_frame", [pair["id"]])
+    assert client.get(f"/api/analysis/{session['id']}/status").json()["status"] == "failed"
+    assert len(codex.calls) == 1
 
 
 def test_failure_summary_picks_error_lines():

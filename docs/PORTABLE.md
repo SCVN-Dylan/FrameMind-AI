@@ -17,7 +17,7 @@ On Windows, use `Start FrameMind.bat` and see `README-Windows.md`.
 
 Files that come from the internet or AirDrop are checked by Gatekeeper. Because the launcher is a script and not a signed app, macOS may say it *"cannot be opened"* or *"could not be verified"*.
 
-- **macOS 15 (Sequoia) and newer:** click **Done**. Then open **System Settings → Privacy & Security**, scroll to *"Start FrameMind.command was blocked…"*, click **Open Anyway** and confirm.
+- **macOS 15 (Sequoia) and newer:** click **Done**, then double-click **`Open Security Settings`** in the same folder. It opens **System Settings → Privacy & Security** for you: click **Open Anyway** next to *"Start FrameMind.command was blocked…"* (near the bottom, under Security) and confirm. If no button is shown, double-click `Start FrameMind.command` once more, then open the settings again.
 - **macOS 12–14:** Control-click (or right-click) `Start FrameMind.command`, choose **Open**, then click **Open** again.
 
 You only have to do this once. The launcher never turns Gatekeeper off or removes macOS security flags.
@@ -33,10 +33,18 @@ It only installs what this Mac is missing, and only after you answer `y`. Nothin
 | Homebrew | Only needed to install the tools below | The official installer from brew.sh. It explains itself and asks for your macOS password; an administrator account is required. |
 | Python 3.9–3.13 | Runs the backend | `brew install python@3.12` (the Python that comes with Apple's Command Line Tools also works) |
 | FFmpeg | Reads videos and extracts frames | `brew install ffmpeg` |
-| Codex CLI (optional) | AI analysis with your ChatGPT account | `brew install --cask codex`, or `npm install -g @openai/codex` if you use npm and not Homebrew |
+| Codex CLI (optional) | AI analysis with your ChatGPT account | FrameMind AI downloads **its own copy** of the latest release (OpenAI's official package from the npm registry, about 150 MB, checked against the registry's SHA-512) into `runtime/codex`, and keeps it up to date. See below. |
 | Python packages | The backend's libraries (`backend/requirements.txt`) | Installed into a private virtual environment, never into the system Python |
 
 Node.js is **not** required. If you skip Codex CLI, FrameMind AI still opens, and AI analysis is shown as disconnected until you install it.
+
+### FrameMind AI's own Codex CLI
+
+FrameMind AI does not depend on the Codex installed on the Mac. The first start asks to download its own copy of the latest Codex CLI. Each later start checks for a newer release and updates the copy without asking. If the update fails or you are offline, the current copy is kept. Updating, replacing or removing any other Codex on the Mac does not affect it.
+
+New Codex versions sometimes change how their sandbox starts. FrameMind AI runs Codex with its own, tighter read-only settings. If a Codex version cannot start with them, FrameMind AI retries once with Codex's built-in read-only settings and keeps using those for that version. Both are read-only and offline, and Codex's shell tool stays off. The log notes the switch.
+
+The copy uses the same ChatGPT sign-in as any other Codex on the Mac (`~/.codex`), so you sign in only once. If you decline the download, FrameMind AI uses the `codex` command it finds on the Mac.
 
 The first launch needs internet and takes a few minutes. Later launches reuse everything and start in a few seconds.
 
@@ -70,6 +78,7 @@ Sign-in is stored by Codex CLI on this Mac (in `~/.codex`). It is never copied f
 ├── frames/                       extracted frames
 ├── standalone_pairing_code.txt   the page's pairing code (private)
 ├── runtime/venv/                 Python environment (safe to delete; it is rebuilt)
+├── runtime/codex/                FrameMind AI's own Codex CLI (safe to delete; it is downloaded again)
 ├── logs/backend.log              backend log
 ├── run/                          PID file and the page opener
 └── launcher.conf                 optional settings (you create it)
@@ -80,6 +89,13 @@ Moving, replacing or deleting the app folder does not touch this data. Deleting 
 To start over without touching anything else, use **Settings → Data Management → Clear All Data** (type `DELETE` to
 confirm). It deletes the videos, frames, sessions, analyses and feedback above and keeps `framemind.db` (empty), your
 selected AI model, the pairing code, the language, `runtime/`, `logs/` and your ChatGPT sign-in. It cannot be undone.
+
+To set FrameMind AI up again from scratch, double-click **`Reset FrameMind.command`**. It stops FrameMind AI, then asks:
+
+- **1 — Reinstall:** removes `runtime/` (the Python environment and FrameMind AI's Codex CLI). Your sessions, videos and settings are kept. The next start installs them again.
+- **2 — Remove everything:** deletes the whole folder above (type `DELETE` to confirm). It cannot be undone.
+
+Homebrew tools (Python, FFmpeg), any other Codex and your ChatGPT sign-in are never touched.
 
 To use another port than 8000, create `launcher.conf` there with a line such as `PORT=8765`. If the port is busy, the launcher uses the next free one.
 
@@ -109,7 +125,8 @@ Pages opened from disk send `Origin: null`, and so do sandboxed frames on any we
 | The page shows **AI Backend Offline** | The Terminal window was closed. Start FrameMind again. |
 | The page asks for a pairing code | Copy the code from the Terminal window into Settings → Local backend. |
 | Codex shows **Not signed in** | Settings → AI Provider → Login with ChatGPT. |
-| Codex **not installed** | `brew install --cask codex`, then click Refresh connection in Settings. |
-| Python environment errors | Delete `~/Library/Application Support/FrameMind AI/runtime` and start again (your data is kept). |
+| Codex **not installed** | Start FrameMind again and answer `y` to download its Codex CLI. |
+| *Codex exited with an error* | Read the line shown in the app, or `logs/backend.log` (sign-in expired, usage limit, network). Sandbox start-up problems with a new Codex are retried automatically. |
+| Python environment errors | Double-click `Reset FrameMind.command`, choose **1**, then start again (your data is kept). |
 
 To check the tools without starting anything, run `scripts/check_dependencies.sh` in Terminal.

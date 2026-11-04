@@ -34,6 +34,13 @@ if ($env:FRAMEMIND_HEALTH_TIMEOUT) { $HealthTimeoutSeconds = [int]$env:FRAMEMIND
 $PythonMinors = @(13, 12, 11, 10, 9)  # Python 3.9-3.13, newest first
 $MinCodexVersion = [version]'0.165.0'  # keep in sync with MIN_VERSION in backend/app/services/ai/codex_cli.py
 
+# FrameMind keeps its own copy of Codex CLI in runtime\codex\<version> and updates it to the latest release at
+# each start (when online). Updating or removing any other Codex on this PC does not affect it. It shares the
+# ChatGPT sign-in (~\.codex). runtime\codex\current names the version in use.
+$CodexHomeDir = Join-Path $RuntimeDir 'codex'
+$CodexCurrentFile = Join-Path $CodexHomeDir 'current'
+$CodexRegistry = 'https://registry.npmjs.org'
+
 # --- Output ------------------------------------------------------------------------------------------------
 function Step([string]$Text) { Write-Host ''; Write-Host "==> $Text" -ForegroundColor White }
 function Info([string]$Text) { Write-Host "    $Text" }
@@ -119,13 +126,33 @@ function Find-Python {
   return $null
 }
 
-# The Codex CLI to run: npm installs codex.cmd, other installers codex.exe.
+# The Codex CLI to run: FrameMind's own copy if it has been downloaded, else the one on PATH (npm installs
+# codex.cmd, other installers codex.exe).
 function Find-Codex {
+  $version = Get-OwnCodexVersion
+  if ($version) { return (Join-Path $CodexHomeDir "$version\bin\codex.exe") }
   foreach ($name in @('codex.exe', 'codex.cmd')) {
     $found = Find-Program $name
     if ($found) { return $found }
   }
   return $null
+}
+
+# The version of FrameMind's own Codex in use, or $null if none was downloaded.
+function Get-OwnCodexVersion {
+  if (-not (Test-Path -LiteralPath $CodexCurrentFile)) { return $null }
+  $version = "$(Get-Content -LiteralPath $CodexCurrentFile -TotalCount 1)".Trim()
+  if ($version -notmatch '^\d+\.\d+\.\d+$') { return $null }
+  if (-not (Test-Path -LiteralPath (Join-Path $CodexHomeDir "$version\bin\codex.exe"))) { return $null }
+  return $version
+}
+
+# The Codex package for this PC: npm platform and Rust target.
+function Get-CodexPlatform {
+  if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') {
+    return [pscustomobject]@{ Platform = 'win32-arm64'; Target = 'aarch64-pc-windows-msvc' }
+  }
+  return [pscustomobject]@{ Platform = 'win32-x64'; Target = 'x86_64-pc-windows-msvc' }
 }
 
 function Get-CodexVersion([string]$Codex) {

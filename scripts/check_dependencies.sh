@@ -162,48 +162,109 @@ check_ffmpeg() {
   return 1
 }
 
-install_codex() {
-  # Official methods from https://github.com/openai/codex: Homebrew cask (no Node.js needed) or npm.
-  if BREW="$(find_brew)"; then
-    brew_install "Codex CLI" --cask codex
-    return
+# The latest Codex CLI release on the npm registry (empty when offline).
+codex_latest_version() {
+  curl -fsS --max-time 10 "$CODEX_REGISTRY/@openai/codex/latest" 2>/dev/null |
+    grep -oE '"version":"[0-9]+\.[0-9]+\.[0-9]+"' | head -n 1 | cut -d '"' -f 4
+}
+
+# Downloads Codex CLI <version> (OpenAI's official npm package for this Mac, checked against the SHA-512 the
+# registry publishes for it) into runtime/codex/<version> and makes it the one in use. Older copies are deleted
+# only after the new one is ready, so a failed download keeps the current copy. Returns 0 on success.
+install_own_codex() {
+  local version="$1" platform target integrity work old
+  read -r platform target <<EOF_PLATFORM
+$(codex_platform)
+EOF_PLATFORM
+  integrity="$(curl -fsS --max-time 15 "$CODEX_REGISTRY/@openai/codex/$version-$platform" 2>/dev/null |
+    grep -oE '"integrity":"sha512-[A-Za-z0-9+/=]+"' | head -n 1 | cut -d '"' -f 4)"
+  if [ -z "$integrity" ]; then
+    warn "Could not read the details of Codex CLI $version from the npm registry."
+    return 1
   fi
-  if command -v npm >/dev/null 2>&1; then
-    info "It will be installed with npm: npm install -g @openai/codex"
-    ask_yes_no "Install Codex CLI now?" || { warn "Codex CLI was not installed."; return 1; }
-    network_available || { error "No internet connection."; return 1; }
-    if ! npm install -g @openai/codex; then
-      error "npm could not install Codex CLI." \
-        "If the error mentions permissions (EACCES), install Homebrew and use: brew install --cask codex"
-      return 1
-    fi
-    hash -r; extend_path
+  mkdir -p "$CODEX_HOME_DIR" || return 1
+  work="$(mktemp -d "$CODEX_HOME_DIR/.download.XXXXXX")" || return 1
+  if ! curl -fL --retry 2 --connect-timeout 15 -o "$work/codex.tgz" \
+      "$CODEX_REGISTRY/@openai/codex/-/codex-$version-$platform.tgz"; then
+    rm -rf "$work"
+    warn "Codex CLI $version could not be downloaded. Check the internet connection."
+    return 1
+  fi
+  if [ "sha512-$(openssl dgst -sha512 -binary "$work/codex.tgz" | base64 | tr -d '\n')" != "$integrity" ]; then
+    rm -rf "$work"
+    warn "The downloaded Codex CLI does not match the registry's checksum, so it was deleted."
+    return 1
+  fi
+  if ! tar -xzf "$work/codex.tgz" -C "$work" "package/vendor/$target" ||
+      ! "$work/package/vendor/$target/bin/codex" --version >/dev/null 2>&1; then
+    rm -rf "$work"
+    warn "The Codex CLI $version package could not be extracted or does not run."
+    return 1
+  fi
+  rm -rf "$CODEX_HOME_DIR/$version"
+  if ! mv "$work/package/vendor/$target" "$CODEX_HOME_DIR/$version"; then
+    rm -rf "$work"
+    return 1
+  fi
+  rm -rf "$work"
+  printf '%s\n' "$version" > "$CODEX_CURRENT_FILE"
+  for old in "$CODEX_HOME_DIR"/*/; do
+    old="${old%/}"
+    [ "$old" != "$CODEX_HOME_DIR/$version" ] && rm -rf "$old"
+  done
+  return 0
+}
+
+# First run: offers to download FrameMind's own Codex CLI. Later runs: updates it to the latest release
+# (automatic, as agreed at the first download), or keeps the current copy when offline.
+update_own_codex() {
+  local current latest
+  current="$(own_codex_version)" || current=""
+  latest="$(codex_latest_version)"
+  if [ -z "$latest" ]; then
+    [ -n "$current" ] && info "Could not check for a newer Codex CLI (offline?). Using $current."
+    [ -z "$current" ] && warn "Could not reach the npm registry to download Codex CLI (offline?)."
     return 0
   fi
-  brew_install "Codex CLI" --cask codex
+  [ "$latest" = "$current" ] && return 0
+  if [ -z "$current" ]; then
+    info "FrameMind AI keeps its own copy of Codex CLI, the official OpenAI package (about 150 MB), in"
+    info "$CODEX_HOME_DIR. It is updated to the latest release each time FrameMind AI starts,"
+    info "and uses the same ChatGPT sign-in. Any other Codex on this Mac is not changed."
+    ask_yes_no "Download Codex CLI $latest for FrameMind AI now?" || { warn "Codex CLI was not downloaded."; return 0; }
+  else
+    info "Updating FrameMind AI's Codex CLI: $current → $latest"
+  fi
+  if install_own_codex "$latest"; then
+    ok "Codex CLI $latest downloaded."
+  elif [ -n "$current" ]; then
+    info "Keeping Codex CLI $current."
+  fi
 }
 
 # Codex is optional: without it FrameMind AI still opens, with AI analysis shown as disconnected.
 check_codex() {
   local codex version status_text
+  [ "$INSTALL" = 1 ] && update_own_codex
   codex="$(find_codex)"
   if [ -z "$codex" ]; then
     warn "Codex CLI was not found. It runs FrameMind AI's analysis with your ChatGPT account."
-    if [ "$INSTALL" = 1 ] && install_codex; then
-      codex="$(find_codex)"
-    fi
-    if [ -z "$codex" ]; then
-      warn "Continuing without Codex CLI: the app opens, AI analysis stays disconnected."
-      info "Install later with: brew install --cask codex   (or: npm install -g @openai/codex)"
-      return 0
-    fi
+    warn "Continuing without Codex CLI: the app opens, AI analysis stays disconnected."
+    info "Start FrameMind AI again and answer y to download it."
+    return 0
   fi
   version="$("$codex" --version 2>/dev/null | head -n 1)"
   if [ -z "$version" ]; then
     warn "Codex CLI at $codex did not answer 'codex --version'. AI analysis may not work."
     return 0
   fi
-  ok "$version: $codex"
+  if [ "${codex#"$CODEX_HOME_DIR"/}" != "$codex" ]; then
+    ok "$version (FrameMind AI's own copy)"
+  else
+    ok "$version: $codex"
+    info "This is the Codex installed on this Mac. Start FrameMind AI again and answer y to use its own copy,"
+    info "which FrameMind AI keeps up to date."
+  fi
   # Only the sign-in mode is shown; the raw output can contain a masked key and is not printed.
   status_text="$("$codex" login status 2>&1 | tr '[:upper:]' '[:lower:]')"
   case "$status_text" in

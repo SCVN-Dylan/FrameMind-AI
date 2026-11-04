@@ -1309,7 +1309,7 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
           <tr><th>Operating system</th><td>macOS (one-click launcher) · Windows 10/11 launcher experimental</td></tr>
           <tr><th>Python</th><td>3.9–3.13 for the local FastAPI backend (installed by the launcher after confirmation)</td></tr>
           <tr><th>FFmpeg</th><td>For metadata and frame extraction on the backend</td></tr>
-          <tr><th>Codex CLI</th><td>Version 0.165.0 or newer, installed locally</td></tr>
+          <tr><th>Codex CLI</th><td>FrameMind's own copy, updated to the latest release at each start</td></tr>
           <tr><th>ChatGPT account</th><td>Sign-in through Codex CLI; analyses count toward the plan's Codex usage limits</td></tr>
           <tr><th>Internet</th><td>Needed for AI analysis and first-time installs; not for offline comparison</td></tr>
         </table>
@@ -1349,7 +1349,7 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
           <li><h4>Extract the ZIP</h4><p>Double-click <b>FrameMind-Portable.zip</b>. You can move the <b>FrameMind-Portable</b> folder anywhere — paths with spaces work.</p></li>
           <li class="key"><h4>Double-click Start FrameMind.command</h4><p>A Terminal window opens and checks Python, FFmpeg and Codex CLI.</p></li>
           <li><h4>Allow it the first time</h4><p>macOS may say the file cannot be opened, because the launcher is a script and not a signed app. You only do this once:</p>
-            <div class="opts"><div class="opt"><b>macOS 15 and newer:</b> click <b>Done</b>, then open <b>System Settings → Privacy &amp; Security</b> and click <b>Open Anyway</b>.</div><div class="opt"><b>macOS 12–14:</b> Control-click the file, choose <b>Open</b>, then click <b>Open</b> again.</div></div></li>
+            <div class="opts"><div class="opt"><b>macOS 15 and newer:</b> click <b>Done</b>, then double-click <b>Open Security Settings</b> in the same folder. It opens <b>System Settings → Privacy &amp; Security</b>: click <b>Open Anyway</b> and confirm.</div><div class="opt"><b>macOS 12–14:</b> Control-click the file, choose <b>Open</b>, then click <b>Open</b> again.</div></div></li>
           <li><h4>Install what is missing</h4><p>For each missing tool the launcher explains what it is and asks first. Type <kbd>y</kbd> and press <kbd>Return</kbd>. The first launch needs internet and takes a few minutes; later launches start in seconds.</p>
             <div class="tools"><span class="chip">Homebrew</span><span class="chip">Python 3.9–3.13</span><span class="chip">FFmpeg</span><span class="chip">Codex CLI (optional)</span></div></li>
           <li><h4>Use the app</h4><p>Your browser opens FrameMind AI, already connected to the backend. Keep the Terminal window open while you work.</p></li>
@@ -1359,8 +1359,8 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
           <li><h4>Extract the ZIP</h4><p>Right-click <b>FrameMind-Portable.zip</b> and choose <b>Extract All…</b>. Running it from inside the ZIP does not work.</p></li>
           <li class="key"><h4>Double-click Start FrameMind.bat</h4><p>A console window opens and checks Python, FFmpeg and Codex CLI.</p></li>
           <li><h4>Allow it the first time</h4><p>If Windows shows <b>Windows protected your PC</b>, click <b>More info → Run anyway</b>. You only do this once.</p></li>
-          <li><h4>Install what is missing</h4><p>Tools are installed with winget (Codex CLI with npm) after you type <kbd>y</kbd> and press <kbd>Enter</kbd>. If a tool is still "not found" right after installing, close the window and start again.</p>
-            <div class="tools"><span class="chip">Python 3.12</span><span class="chip">FFmpeg</span><span class="chip">Node.js LTS</span><span class="chip">Codex CLI (optional)</span></div></li>
+          <li><h4>Install what is missing</h4><p>Tools are installed with winget after you type <kbd>y</kbd> and press <kbd>Enter</kbd>, and Codex CLI is downloaded as FrameMind's own, auto-updated copy. If a tool is still "not found" right after installing, close the window and start again.</p>
+            <div class="tools"><span class="chip">Python 3.12</span><span class="chip">FFmpeg</span><span class="chip">Codex CLI (optional)</span></div></li>
           <li><h4>Use the app</h4><p>Your browser opens FrameMind AI, already connected to the backend. Keep the black window open while you work.</p></li>
           <li><h4>Sign in for AI analysis</h4><p>Open <b>Settings → AI Provider → Login with ChatGPT</b>. Only needed once per computer.</p></li>
         </ol>
@@ -1373,10 +1373,13 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
             <li class="dir"><svg class="ic"><use href="#i-box"/></svg>backend</li>
             <li class="dir"><svg class="ic"><use href="#i-box"/></svg>scripts</li>
             <li class="dir"><svg class="ic"><use href="#i-box"/></svg>submission</li>
+            <li data-f="mac-settings"><svg class="ic"><use href="#i-shield"/></svg>Open Security Settings</li>
             <li><svg class="ic"><use href="#i-info"/></svg>README.md</li>
             <li><svg class="ic"><use href="#i-info"/></svg>README-Windows.md</li>
             <li data-f="win-start"><svg class="ic"><use href="#i-terminal"/></svg>Start FrameMind.bat<span class="tap">double-click</span></li>
             <li data-f="mac-start"><svg class="ic"><use href="#i-terminal"/></svg>Start FrameMind.command<span class="tap">double-click</span></li>
+            <li data-f="win-reset"><svg class="ic"><use href="#i-restart"/></svg>Reset FrameMind.bat</li>
+            <li data-f="mac-reset"><svg class="ic"><use href="#i-restart"/></svg>Reset FrameMind.command</li>
             <li data-f="win-stop"><svg class="ic"><use href="#i-terminal"/></svg>Stop FrameMind.bat</li>
             <li data-f="mac-stop"><svg class="ic"><use href="#i-terminal"/></svg>Stop FrameMind.command</li>
           </ul>
@@ -1623,7 +1626,7 @@ var I18N = {
 "macOS (one-click launcher) · Windows 10/11 launcher experimental": "macOS (launcher một chạm) · launcher Windows 10/11 đang thử nghiệm",
 "3.9–3.13 for the local FastAPI backend (installed by the launcher after confirmation)": "3.9–3.13 cho backend FastAPI trên máy (launcher cài sau khi bạn xác nhận)",
 "For metadata and frame extraction on the backend": "Dùng cho metadata và trích xuất frame trên backend",
-"Version 0.165.0 or newer, installed locally": "Phiên bản 0.165.0 trở lên, cài trên máy",
+"FrameMind's own copy, updated to the latest release at each start": "Bản riêng của FrameMind, tự cập nhật lên bản mới nhất mỗi lần khởi động",
 "ChatGPT account": "Tài khoản ChatGPT",
 "Sign-in through Codex CLI; analyses count toward the plan's Codex usage limits": "Đăng nhập qua Codex CLI; mỗi lần phân tích tính vào hạn mức Codex của gói",
 "Internet": "Internet",
@@ -1656,7 +1659,7 @@ var I18N = {
 "A Terminal window opens and checks Python, FFmpeg and Codex CLI.": "Một cửa sổ Terminal mở ra và kiểm tra Python, FFmpeg và Codex CLI.",
 "Allow it the first time": "Cho phép chạy ở lần đầu",
 "macOS may say the file cannot be opened, because the launcher is a script and not a signed app. You only do this once:": "macOS có thể báo không mở được file, vì launcher là một script chứ không phải ứng dụng có chữ ký. Bạn chỉ cần làm việc này một lần:",
-"<b>macOS 15 and newer:<\/b> click <b>Done<\/b>, then open <b>System Settings → Privacy &amp; Security<\/b> and click <b>Open Anyway<\/b>.": "<b>macOS 15 trở lên:<\/b> bấm <b>Done<\/b>, rồi mở <b>System Settings → Privacy &amp; Security<\/b> và bấm <b>Open Anyway<\/b>.",
+"<b>macOS 15 and newer:<\/b> click <b>Done<\/b>, then double-click <b>Open Security Settings<\/b> in the same folder. It opens <b>System Settings → Privacy &amp; Security<\/b>: click <b>Open Anyway<\/b> and confirm.": "<b>macOS 15 trở lên:<\/b> bấm <b>Done<\/b>, rồi bấm đúp vào <b>Open Security Settings<\/b> trong cùng thư mục. Nó mở sẵn <b>System Settings → Privacy &amp; Security<\/b>: bạn chỉ cần bấm <b>Open Anyway<\/b> và xác nhận.",
 "<b>macOS 12–14:<\/b> Control-click the file, choose <b>Open<\/b>, then click <b>Open<\/b> again.": "<b>macOS 12–14:<\/b> giữ Control và bấm vào file, chọn <b>Open<\/b>, rồi bấm <b>Open<\/b> thêm lần nữa.",
 "Install what is missing": "Cài những gì còn thiếu",
 "For each missing tool the launcher explains what it is and asks first. Type <kbd>y<\/kbd> and press <kbd>Return<\/kbd>. The first launch needs internet and takes a few minutes; later launches start in seconds.": "Với mỗi công cụ còn thiếu, launcher giải thích nó là gì và hỏi trước. Gõ <kbd>y<\/kbd> rồi nhấn <kbd>Return<\/kbd>. Lần chạy đầu cần internet và mất vài phút; những lần sau khởi động trong vài giây.",
@@ -1669,7 +1672,7 @@ var I18N = {
 "Double-click Start FrameMind.bat": "Double-click Start FrameMind.bat",
 "A console window opens and checks Python, FFmpeg and Codex CLI.": "Một cửa sổ console mở ra và kiểm tra Python, FFmpeg và Codex CLI.",
 "If Windows shows <b>Windows protected your PC<\/b>, click <b>More info → Run anyway<\/b>. You only do this once.": "Nếu Windows hiện <b>Windows protected your PC<\/b>, bấm <b>More info → Run anyway<\/b>. Bạn chỉ cần làm một lần.",
-"Tools are installed with winget (Codex CLI with npm) after you type <kbd>y<\/kbd> and press <kbd>Enter<\/kbd>. If a tool is still \"not found\" right after installing, close the window and start again.": "Các công cụ được cài bằng winget (Codex CLI bằng npm) sau khi bạn gõ <kbd>y<\/kbd> và nhấn <kbd>Enter<\/kbd>. Nếu vừa cài xong mà vẫn báo \"not found\", hãy đóng cửa sổ và chạy lại.",
+"Tools are installed with winget after you type <kbd>y<\/kbd> and press <kbd>Enter<\/kbd>, and Codex CLI is downloaded as FrameMind's own, auto-updated copy. If a tool is still \"not found\" right after installing, close the window and start again.": "Các công cụ được cài bằng winget sau khi bạn gõ <kbd>y<\/kbd> và nhấn <kbd>Enter<\/kbd>, còn Codex CLI được tải về dưới dạng bản riêng của FrameMind và tự cập nhật. Nếu vừa cài xong mà vẫn báo \"not found\", hãy đóng cửa sổ và chạy lại.",
 "Your browser opens FrameMind AI, already connected to the backend. Keep the black window open while you work.": "Trình duyệt mở FrameMind AI, đã kết nối sẵn với backend. Giữ cửa sổ màu đen mở trong lúc làm việc.",
 "The Windows launcher has not been run on a real Windows PC yet. If something fails, the window shows the error and the log is in <b>%LOCALAPPDATA%\\FrameMind AI\\logs<\/b>.": "Launcher Windows chưa được chạy trên máy Windows thật. Nếu có lỗi, cửa sổ sẽ hiện thông báo lỗi và log nằm ở <b>%LOCALAPPDATA%\\FrameMind AI\\logs<\/b>.",
 "Stopping": "Dừng ứng dụng",
@@ -1882,7 +1885,7 @@ var I18N = {
 "macOS (one-click launcher) · Windows 10/11 launcher experimental": "macOS(원클릭 런처) · Windows 10/11 런처는 실험적",
 "3.9–3.13 for the local FastAPI backend (installed by the launcher after confirmation)": "로컬 FastAPI 백엔드용 3.9–3.13(확인 후 런처가 설치)",
 "For metadata and frame extraction on the backend": "백엔드의 메타데이터와 프레임 추출용",
-"Version 0.165.0 or newer, installed locally": "0.165.0 이상, 로컬 설치",
+"FrameMind's own copy, updated to the latest release at each start": "FrameMind 전용 사본, 시작할 때마다 최신 버전으로 업데이트",
 "ChatGPT account": "ChatGPT 계정",
 "Sign-in through Codex CLI; analyses count toward the plan's Codex usage limits": "Codex CLI로 로그인, 분석은 요금제의 Codex 사용 한도에 포함",
 "Internet": "인터넷",
@@ -1915,7 +1918,7 @@ var I18N = {
 "A Terminal window opens and checks Python, FFmpeg and Codex CLI.": "터미널 창이 열리고 Python, FFmpeg, Codex CLI를 확인합니다.",
 "Allow it the first time": "처음 한 번 실행 허용",
 "macOS may say the file cannot be opened, because the launcher is a script and not a signed app. You only do this once:": "런처는 서명된 앱이 아닌 스크립트라서 macOS가 파일을 열 수 없다고 표시할 수 있습니다. 한 번만 하면 됩니다:",
-"<b>macOS 15 and newer:<\/b> click <b>Done<\/b>, then open <b>System Settings → Privacy &amp; Security<\/b> and click <b>Open Anyway<\/b>.": "<b>macOS 15 이상:<\/b> <b>완료<\/b>를 누른 뒤 <b>시스템 설정 → 개인정보 보호 및 보안<\/b>에서 <b>그래도 열기<\/b>를 누르세요.",
+"<b>macOS 15 and newer:<\/b> click <b>Done<\/b>, then double-click <b>Open Security Settings<\/b> in the same folder. It opens <b>System Settings → Privacy &amp; Security<\/b>: click <b>Open Anyway<\/b> and confirm.": "<b>macOS 15 이상:<\/b> <b>완료<\/b>를 누른 뒤 같은 폴더의 <b>Open Security Settings<\/b>를 더블 클릭하세요. <b>시스템 설정 → 개인정보 보호 및 보안<\/b>이 열리면 <b>그래도 열기<\/b>를 누르고 확인하세요.",
 "<b>macOS 12–14:<\/b> Control-click the file, choose <b>Open<\/b>, then click <b>Open<\/b> again.": "<b>macOS 12–14:<\/b> 파일을 Control-클릭해 <b>열기<\/b>를 선택한 뒤 다시 <b>열기<\/b>를 누르세요.",
 "Install what is missing": "없는 도구 설치",
 "For each missing tool the launcher explains what it is and asks first. Type <kbd>y<\/kbd> and press <kbd>Return<\/kbd>. The first launch needs internet and takes a few minutes; later launches start in seconds.": "없는 도구마다 런처가 무엇인지 설명하고 먼저 묻습니다. <kbd>y<\/kbd>를 입력하고 <kbd>Return<\/kbd>을 누르세요. 첫 실행은 인터넷이 필요하고 몇 분 걸리며, 이후에는 몇 초 만에 시작됩니다.",
@@ -1928,7 +1931,7 @@ var I18N = {
 "Double-click Start FrameMind.bat": "Start FrameMind.bat 더블 클릭",
 "A console window opens and checks Python, FFmpeg and Codex CLI.": "콘솔 창이 열리고 Python, FFmpeg, Codex CLI를 확인합니다.",
 "If Windows shows <b>Windows protected your PC<\/b>, click <b>More info → Run anyway<\/b>. You only do this once.": "<b>Windows의 PC 보호<\/b> 창이 나타나면 <b>추가 정보 → 실행<\/b>을 누르세요. 한 번만 하면 됩니다.",
-"Tools are installed with winget (Codex CLI with npm) after you type <kbd>y<\/kbd> and press <kbd>Enter<\/kbd>. If a tool is still \"not found\" right after installing, close the window and start again.": "<kbd>y<\/kbd>를 입력하고 <kbd>Enter<\/kbd>를 누르면 winget으로(Codex CLI는 npm으로) 도구가 설치됩니다. 설치 직후에도 \"not found\"가 나오면 창을 닫고 다시 실행하세요.",
+"Tools are installed with winget after you type <kbd>y<\/kbd> and press <kbd>Enter<\/kbd>, and Codex CLI is downloaded as FrameMind's own, auto-updated copy. If a tool is still \"not found\" right after installing, close the window and start again.": "<kbd>y<\/kbd>를 입력하고 <kbd>Enter<\/kbd>를 누르면 winget으로 도구가 설치되고, Codex CLI는 자동 업데이트되는 FrameMind 전용 사본으로 다운로드됩니다. 설치 직후에도 \"not found\"가 나오면 창을 닫고 다시 실행하세요.",
 "Your browser opens FrameMind AI, already connected to the backend. Keep the black window open while you work.": "브라우저에서 백엔드에 이미 연결된 FrameMind AI가 열립니다. 작업하는 동안 검은 창을 열어 두세요.",
 "The Windows launcher has not been run on a real Windows PC yet. If something fails, the window shows the error and the log is in <b>%LOCALAPPDATA%\\FrameMind AI\\logs<\/b>.": "Windows 런처는 아직 실제 Windows PC에서 실행해 보지 않았습니다. 문제가 생기면 창에 오류가 표시되며, 로그는 <b>%LOCALAPPDATA%\\FrameMind AI\\logs<\/b>에 있습니다.",
 "Stopping": "종료하기",

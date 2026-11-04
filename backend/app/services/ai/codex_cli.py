@@ -125,6 +125,14 @@ def redact(text: str) -> str:
 
 
 FAILURE_LOG_CHARS = 4000
+# Codex failing to set up its sandbox or session, before the model is reached. New Codex versions sometimes change
+# how their sandbox starts (e.g. 0.165+ re-runs Codex as a sandboxed helper to read AGENTS.md); FrameMind's own
+# tighter profile can then break where Codex's built-in one still works.
+_SETUP_FAILURE_RE = re.compile(
+    r"thread/start|failed to create session|sandbox|operation not permitted|permission profile|default_permissions|"
+    r"permissions\.|agents\.md",
+    re.I,
+)
 _FAILURE_LINE_RE = re.compile(r"error|fail|denied|unauthori[sz]ed|forbidden|limit|not found|refused|invalid|panic|timed? ?out", re.I)
 
 
@@ -154,6 +162,11 @@ def _tail(path: Path, limit: int) -> str:
             return redact(handle.read().decode("utf-8", errors="replace"))
     except OSError:
         return ""
+
+
+def _is_auth_failure(detail: str) -> bool:
+    lowered = detail.lower()
+    return "401" in lowered or "unauthorized" in lowered or "not logged in" in lowered or "token" in lowered and "expired" in lowered
 
 
 def _child_env() -> Dict[str, str]:
@@ -221,6 +234,9 @@ class CodexCLIService:
         self._procs_lock = threading.Lock()
         self._stopping = False
         self.last_error: Optional[str] = None
+        # Codex versions (by version string) that could not start with FrameMind's own profile, so they go straight
+        # to Codex's built-in read-only profile.
+        self._builtin_profile_versions: Set[str] = set()
 
     # ---------- Detection ----------
 
@@ -257,7 +273,7 @@ class CodexCLIService:
 
             help_text = self._run_quick([exe, "exec", "--help"]).stdout
             probe.capabilities = {
-                "non_interactive": "Run Codex non-interactively" in help_text,
+                "non_interactive": "--output-last-message" in help_text,  # `codex exec` exists
                 "image_input": "--image" in help_text,
                 "output_schema": "--output-schema" in help_text and "--output-last-message" in help_text,
                 "restricted_permissions": all(opt in help_text for opt in REQUIRED_EXEC_OPTIONS),
@@ -304,15 +320,32 @@ class CodexCLIService:
             return self._slots
 
     def build_command(
-        self, exe: str, workdir: Path, images: Sequence[Path], schema: Path, answer: Path, model: Optional[str] = None
+        self,
+        exe: str,
+        workdir: Path,
+        images: Sequence[Path],
+        schema: Path,
+        answer: Path,
+        model: Optional[str] = None,
+        builtin_profile: bool = False,
     ) -> List[str]:
         """The exact argument list for one locked-down analysis run (no shell, no user text in arguments).
-        `model` must already be validated against the Codex model catalog; None = the CLI default model."""
-        # Read-only: the work folder, plus Codex's own install folders. Codex re-runs its executable as a
-        # sandboxed helper (e.g. to load AGENTS.md); if that path is hidden, macOS refuses the exec
-        # ("sandbox-exec: execvp() of '/opt/homebrew/bin/codex' failed: Operation not permitted").
-        readable = [workdir.resolve(), *_install_dirs(exe)]
-        root = ", ".join(f"{json.dumps(str(path))}=\"read\"" for path in dict.fromkeys(readable))  # TOML keys
+        `model` must already be validated against the Codex model catalog; None = the CLI default model.
+        `builtin_profile` uses Codex's own `:read-only` profile instead of FrameMind's tighter one (the fallback
+        when a Codex version cannot start with it). Both are read-only, offline, and the shell tool stays off."""
+        if builtin_profile:
+            permissions = ["-c", 'default_permissions=":read-only"']
+        else:
+            # Read-only: the work folder, plus Codex's own install folders. Codex re-runs its executable as a
+            # sandboxed helper (e.g. to load AGENTS.md); if that path is hidden, macOS refuses the exec
+            # ("sandbox-exec: execvp() of '/opt/homebrew/bin/codex' failed: Operation not permitted").
+            readable = [workdir.resolve(), *_install_dirs(exe)]
+            root = ", ".join(f"{json.dumps(str(path))}=\"read\"" for path in dict.fromkeys(readable))  # TOML keys
+            permissions = [
+                "-c", f'default_permissions="{PROFILE}"',
+                "-c", f'permissions.{PROFILE}.extends=":read-only"',
+                "-c", f'permissions.{PROFILE}.filesystem={{":root"="deny", ":minimal"="read", {root}}}',
+            ]
         cmd = [
             exe,
             "exec",
@@ -322,11 +355,13 @@ class CodexCLIService:
             "--skip-git-repo-check",
             "--color", "never",
             "--cd", str(workdir),
-            "-c", f'default_permissions="{PROFILE}"',
-            "-c", f'permissions.{PROFILE}.extends=":read-only"',
-            "-c", f'permissions.{PROFILE}.filesystem={{":root"="deny", ":minimal"="read", {root}}}',
+            *permissions,
             "-c", 'approval_policy="never"',
             "-c", 'web_search="disabled"',
+            # No AGENTS.md: the prompt is the only instruction. Otherwise a `.git` above the temp folder makes
+            # Codex read AGENTS.md files in folders the profile denies, and thread start fails.
+            "-c", "project_root_markers=[]",
+            "-c", "project_doc_max_bytes=0",
         ]
         for feature in DISABLED_FEATURES:
             cmd += ["--disable", feature]
@@ -352,8 +387,55 @@ class CodexCLIService:
         answer = workdir / "answer.json"
         stdout_path, stderr_path = workdir / "stdout.log", workdir / "stderr.log"
         schema.write_text(json.dumps(OUTPUT_JSON_SCHEMA), encoding="utf-8")
-        cmd = self.build_command(probe.executable or "codex", workdir, images, schema, answer, model)
+        exe, version = probe.executable or "codex", probe.version or "unknown"
+        builtin = version in self._builtin_profile_versions
+        cmd = self.build_command(exe, workdir, images, schema, answer, model, builtin_profile=builtin)
+        proc = self._execute(cmd, workdir, prompt, stdout_path, stderr_path)
 
+        limit = settings.codex_output_limit_bytes
+        if proc.returncode != 0 and not builtin:
+            detail = (_tail(stderr_path, limit) or _tail(stdout_path, limit)).strip()
+            if _SETUP_FAILURE_RE.search(detail) and not _is_auth_failure(detail):
+                logger.warning(
+                    "Codex %s could not start with FrameMind's sandbox profile (%s); retrying with Codex's built-in "
+                    "read-only profile.", version, failure_summary(detail),
+                )
+                logger.warning("Codex output (last %d chars):\n%s", FAILURE_LOG_CHARS, detail[-FAILURE_LOG_CHARS:])
+                self._builtin_profile_versions.add(version)
+                cmd = self.build_command(exe, workdir, images, schema, answer, model, builtin_profile=True)
+                proc = self._execute(cmd, workdir, prompt, stdout_path, stderr_path)
+
+        if proc.returncode != 0:
+            detail = (_tail(stderr_path, limit) or _tail(stdout_path, limit)).strip()
+            last_line = failure_summary(detail)
+            auth_failure = _is_auth_failure(detail)
+            code = "codex_not_authenticated" if auth_failure else "codex_failed"
+            if auth_failure:
+                self.invalidate()  # e.g. the ChatGPT sign-in expired: re-check before the next run
+            self.last_error = last_line
+            logger.warning("Codex exited with %s: %s", proc.returncode, last_line)
+            if detail:
+                logger.warning("Codex output (last %d chars):\n%s", FAILURE_LOG_CHARS, detail[-FAILURE_LOG_CHARS:])
+            raise CodexError(code, f"Codex exited with code {proc.returncode}: {last_line}")
+
+        if not answer.is_file():
+            self.last_error = "no answer file"
+            raise CodexError("codex_invalid_output", "Codex finished without writing an answer.")
+        if answer.stat().st_size > MAX_ANSWER_BYTES:
+            raise CodexError("codex_invalid_output", "Codex answer is too large.")
+        try:
+            result = parse_answer(answer.read_text(encoding="utf-8", errors="replace"))
+        except CodexError as exc:
+            self.last_error = exc.message
+            raise
+        self.last_error = None
+        return result
+
+    def _execute(
+        self, cmd: List[str], workdir: Path, prompt: str, stdout_path: Path, stderr_path: Path
+    ) -> subprocess.Popen:
+        """Runs one `codex exec` to completion (or kills it on timeout / Clear All Data)."""
+        settings = get_settings()
         slots = self._job_slots()
         if not slots.acquire(timeout=settings.codex_timeout_seconds):
             raise CodexError("codex_busy", "Another Codex analysis is still running.")
@@ -387,34 +469,7 @@ class CodexCLIService:
         finally:
             slots.release()
         self._raise_if_stopping()  # killed by stop_all(): not a Codex failure
-
-        limit = settings.codex_output_limit_bytes
-        if proc.returncode != 0:
-            detail = (_tail(stderr_path, limit) or _tail(stdout_path, limit)).strip()
-            last_line = failure_summary(detail)
-            lowered = detail.lower()
-            auth_failure = "401" in lowered or "unauthorized" in lowered or "not logged in" in lowered or "token" in lowered and "expired" in lowered
-            code = "codex_not_authenticated" if auth_failure else "codex_failed"
-            if auth_failure:
-                self.invalidate()  # e.g. the ChatGPT sign-in expired: re-check before the next run
-            self.last_error = last_line
-            logger.warning("Codex exited with %s: %s", proc.returncode, last_line)
-            if detail:
-                logger.warning("Codex output (last %d chars):\n%s", FAILURE_LOG_CHARS, detail[-FAILURE_LOG_CHARS:])
-            raise CodexError(code, f"Codex exited with code {proc.returncode}: {last_line}")
-
-        if not answer.is_file():
-            self.last_error = "no answer file"
-            raise CodexError("codex_invalid_output", "Codex finished without writing an answer.")
-        if answer.stat().st_size > MAX_ANSWER_BYTES:
-            raise CodexError("codex_invalid_output", "Codex answer is too large.")
-        try:
-            result = parse_answer(answer.read_text(encoding="utf-8", errors="replace"))
-        except CodexError as exc:
-            self.last_error = exc.message
-            raise
-        self.last_error = None
-        return result
+        return proc
 
     def _raise_if_stopping(self) -> None:
         with self._procs_lock:

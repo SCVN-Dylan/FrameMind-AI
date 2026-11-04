@@ -36,11 +36,12 @@ printf 'Work dir: %s\n' "$WORK"
 
 # --------------------------------------------------------------------------------------------------------
 section "1. Syntax and permissions"
-for f in "$REPO/Start FrameMind.command" "$REPO/Stop FrameMind.command" "$REPO"/scripts/*.sh; do
+for f in "$REPO/Start FrameMind.command" "$REPO/Stop FrameMind.command" "$REPO/Reset FrameMind.command" "$REPO"/scripts/*.sh; do
   check "bash -n $(basename "$f")" /bin/bash -n "$f"
 done
 check "Start FrameMind.command is executable" test -x "$REPO/Start FrameMind.command"
 check "Stop FrameMind.command is executable" test -x "$REPO/Stop FrameMind.command"
+check "Reset FrameMind.command is executable" test -x "$REPO/Reset FrameMind.command"
 check "launcher scripts use no eval" sh -c '! grep -nE "(^|[;&| ])eval " "$1"/scripts/*.sh "$1"/*.command' _ "$REPO"
 check "launcher scripts never call sudo" sh -c '! grep -nE "(^|[;&| ])sudo " "$1"/scripts/*.sh "$1"/*.command' _ "$REPO"
 
@@ -50,6 +51,8 @@ section "2. Package (ZIP) contents"
 ZIP="$WORK/dist/FrameMind-Portable.zip"
 LISTING="$(unzip -Z1 "$ZIP")"
 for wanted in "FrameMind-Portable/Start FrameMind.command" "FrameMind-Portable/Stop FrameMind.command" \
+  "FrameMind-Portable/Reset FrameMind.command" FrameMind-Portable/scripts/reset.sh \
+  "FrameMind-Portable/Reset FrameMind.bat" FrameMind-Portable/scripts/windows/reset.ps1 \
   FrameMind-Portable/submission/index.html FrameMind-Portable/backend/requirements.txt FrameMind-Portable/backend/app/main.py \
   FrameMind-Portable/scripts/setup.sh FrameMind-Portable/scripts/start_backend.sh FrameMind-Portable/scripts/check_dependencies.sh \
   FrameMind-Portable/README.md; do
@@ -62,6 +65,8 @@ mkdir -p "$APP_PARENT"
 check "extracted to a path with spaces" test -f "$APP/submission/index.html"
 check "executable bit kept in ZIP (Start)" test -x "$APP/Start FrameMind.command"
 check "executable bit kept in ZIP (scripts)" test -x "$APP/scripts/start_backend.sh"
+check "ZIP has the Privacy & Security shortcut" \
+  grep -q "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension" "$APP/Open Security Settings.webloc"
 
 # --------------------------------------------------------------------------------------------------------
 section "3. Dependency detection and installation prompts (mocks)"
@@ -69,15 +74,24 @@ make_sandbox() {
   rm -rf "$SANDBOX"; mkdir -p "$SANDBOX/bin" "$SANDBOX/brew/bin"
   local tool
   for tool in bash sh uname sw_vers sysctl cat grep sed awk mkdir rm mv chmod date dirname basename head tail tr cut \
-    sleep ps lsof shasum wc mktemp env id ln cp; do
+    sleep ps lsof shasum wc mktemp env id ln cp tar gzip openssl base64; do
     ln -s "$(command -v "$tool")" "$SANDBOX/bin/$tool"
   done
   : > "$SANDBOX/calls.log"
-  # curl: network checks succeed; a download writes a fake Homebrew installer that "installs" fake brew.
+  # curl: network checks succeed; the npm registry serves a fake Codex 9.9.9 (its checksum is wrong when the file
+  # bad-integrity exists); any other download is a fake Homebrew installer that "installs" fake brew.
   cat > "$SANDBOX/bin/curl" <<EOF
 #!/bin/bash
 echo "curl \$*" >> "$SANDBOX/calls.log"
-out=""; while [ \$# -gt 0 ]; do [ "\$1" = "-o" ] && out="\$2"; shift; done
+out=""; url=""; while [ \$# -gt 0 ]; do [ "\$1" = "-o" ] && out="\$2"; url="\$1"; shift; done
+case "\$url" in
+  */@openai/codex/latest) echo '{"name":"@openai/codex","version":"9.9.9","dist":{}}'; exit 0 ;;
+  */@openai/codex/9.9.9-darwin-*)
+    sum="\$(openssl dgst -sha512 -binary "$SANDBOX/fake-codex.tgz" | base64 | tr -d '\\n')"
+    [ -f "$SANDBOX/bad-integrity" ] && sum="AAAA\$sum"
+    echo "{\"version\":\"9.9.9-darwin\",\"dist\":{\"integrity\":\"sha512-\$sum\"}}"; exit 0 ;;
+  */@openai/codex/-/*) cp "$SANDBOX/fake-codex.tgz" "\$out"; exit 0 ;;
+esac
 if [ -n "\$out" ]; then
   printf '%s\n' '#!/bin/bash' 'echo homebrew-installer-ran >> "$SANDBOX/calls.log"' \
     'cp "$SANDBOX/fake-brew" "$SANDBOX/brew/bin/brew"' > "\$out"
@@ -101,13 +115,20 @@ case "$*" in
 esac
 EOF
   chmod +x "$SANDBOX/bin/curl" "$SANDBOX/fake-brew" "$SANDBOX/fake-codex"
+  local target
+  for target in aarch64-apple-darwin x86_64-apple-darwin; do
+    mkdir -p "$SANDBOX/pkg/package/vendor/$target/bin"
+    cp "$SANDBOX/fake-codex" "$SANDBOX/pkg/package/vendor/$target/bin/codex"
+  done
+  tar -czf "$SANDBOX/fake-codex.tgz" -C "$SANDBOX/pkg" package
 }
 run_deps() {  # run_deps "<answers>" [--install]
   printf '%b' "$1" | env -i HOME="$WORK/home" PATH="$SANDBOX/bin" FRAMEMIND_TOOL_DIRS="$SANDBOX/brew/bin" \
     FRAMEMIND_DATA_DIR="$DATA" /bin/bash "$APP/scripts/check_dependencies.sh" ${2:+"$2"} 2>&1
 }
+codex_reset() { rm -rf "$DATA/runtime/codex"; }
 
-make_sandbox
+make_sandbox; codex_reset
 OUT="$(run_deps "")"; STATUS=$?
 check "nothing installed: report-only run exits 1" test "$STATUS" = 1
 check "missing Python is explained" contains "$OUT" "Python 3 (3.9–3.13) was not found"
@@ -125,18 +146,40 @@ make_sandbox
 OUT="$(run_deps "" --install)"; STATUS=$?
 check "--install with no input (EOF) counts as no" sh -c '[ "$1" = 1 ] && ! grep -q "installer-ran\|^brew" "$2"' _ "$STATUS" "$SANDBOX/calls.log"
 
-make_sandbox
+make_sandbox; codex_reset
 OUT="$(run_deps "y\ny\ny\ny\n" --install)"; STATUS=$?
 check "--install, answer yes: exits 0" test "$STATUS" = 0
 check "Homebrew installer downloaded from the official URL, then run" \
   sh -c 'grep -q "raw.githubusercontent.com/Homebrew/install/HEAD/install.sh" "$1" && grep -q installer-ran "$1"' _ "$SANDBOX/calls.log"
 check "Python installed with brew install python@3.12" grep -qx "brew install python@3.12" "$SANDBOX/calls.log"
 check "FFmpeg installed with brew install ffmpeg" grep -qx "brew install ffmpeg" "$SANDBOX/calls.log"
-check "Codex installed with brew install --cask codex" grep -qx "brew install --cask codex" "$SANDBOX/calls.log"
-check "installations are verified afterwards" sh -c 'contains() { case "$1" in *"$2"*) return 0;; esac; return 1; }; contains "$1" "Python 3.12:" && contains "$1" "codex-cli 0.0.0-mock"' _ "$OUT"
+check "latest Codex downloaded from the npm registry" \
+  grep -q "registry.npmjs.org/@openai/codex/-/codex-9.9.9-darwin-" "$SANDBOX/calls.log"
+check "Codex not installed with brew" sh -c '! grep -q -- "--cask codex" "$1"' _ "$SANDBOX/calls.log"
+check "installations are verified afterwards" sh -c 'contains() { case "$1" in *"$2"*) return 0;; esac; return 1; }; contains "$1" "Python 3.12:" && contains "$1" "codex-cli 0.0.0-mock (FrameMind AI'"'"'s own copy)"' _ "$OUT"
 check "unauthenticated Codex: continues, shown as not signed in" contains "$OUT" "Codex is not signed in"
+check "own Codex kept in the data folder" test -x "$DATA/runtime/codex/9.9.9/bin/codex"
+OUT="$(run_deps "" --install)"
+check "own Codex is reused without asking again" sh -c '! grep -q "Download Codex" <<<"$1"' _ "$OUT"
+mv "$DATA/runtime/codex/9.9.9" "$DATA/runtime/codex/9.9.8"; echo 9.9.8 > "$DATA/runtime/codex/current"
+OUT="$(run_deps "" --install)"
+check "older own Codex is updated to the latest without asking" sh -c '
+  case "$1" in *"9.9.8 → 9.9.9"*) ;; *) exit 1 ;; esac
+  case "$1" in *"Download Codex"*) exit 1 ;; esac
+  [ "$(cat "$2/runtime/codex/current")" = 9.9.9 ] && [ ! -e "$2/runtime/codex/9.9.8" ]' _ "$OUT" "$DATA"
+mv "$DATA/runtime/codex/9.9.9" "$DATA/runtime/codex/9.9.8"; echo 9.9.8 > "$DATA/runtime/codex/current"
+touch "$SANDBOX/bad-integrity"
+OUT="$(run_deps "" --install)"
+check "failed update keeps the current Codex" sh -c '
+  case "$1" in *"Keeping Codex CLI 9.9.8"*) ;; *) exit 1 ;; esac
+  [ -x "$2/runtime/codex/9.9.8/bin/codex" ] && [ ! -e "$2/runtime/codex/9.9.9" ]' _ "$OUT" "$DATA"
 
-make_sandbox
+make_sandbox; codex_reset; touch "$SANDBOX/bad-integrity"
+OUT="$(run_deps "y\ny\ny\ny\n" --install)"
+check "Codex download with a wrong checksum is rejected" contains "$OUT" "does not match the registry's checksum"
+check "rejected Codex download leaves nothing behind" sh -c '[ -z "$(ls -A "$1/runtime/codex" 2>/dev/null)" ]' _ "$DATA"
+
+make_sandbox; codex_reset
 cp "$SANDBOX/fake-brew" "$SANDBOX/brew/bin/brew"
 OUT="$(run_deps "n\ny\nn\n" --install)"; STATUS=$?
 check "partial approval: declined Python stays missing (exit 1)" test "$STATUS" = 1
@@ -294,6 +337,25 @@ read -r PID PORT < "$DATA/run/backend.pid"
 sleep 2
 check "Stop FrameMind: launcher window reports a normal stop" grep -q "was stopped" "$WORK/launcher-d.log"
 check "Stop FrameMind: no false crash report" sh -c '! grep -q "stopped unexpectedly" "$1"' _ "$WORK/launcher-d.log"
+LAUNCHER_PID=""
+
+# --------------------------------------------------------------------------------------------------------
+section "8. Reset FrameMind (throwaway data folder only)"
+# Never the real data folder: every reset below targets $DATA inside this test's work dir.
+case "$DATA" in "$WORK"/*) ;; *) echo "refusing: test data folder is outside $WORK" >&2; exit 1 ;; esac
+reset_test() { printf '%b' "$1" | FRAMEMIND_DATA_DIR="$DATA" /bin/bash "$APP/scripts/reset.sh" 2>&1; }
+run_launcher e
+read -r PID PORT < "$DATA/run/backend.pid"
+OUT="$(reset_test '\n')"
+check "reset: just Return cancels" sh -c 'case "$1" in *"Nothing was removed"*) ;; *) exit 1;; esac; [ -d "$2/runtime" ] && kill -0 "$3"' _ "$OUT" "$DATA" "$PID"
+OUT="$(reset_test '2\ndelete\n')"
+check "reset: everything needs DELETE exactly" sh -c 'case "$1" in *"Nothing was removed"*) ;; *) exit 1;; esac; [ -f "$2/framemind.db" ]' _ "$OUT" "$DATA"
+OUT="$(reset_test '1\n')"
+sleep 1
+check "reset 1: stops the running backend" sh -c '! kill -0 "$1" 2>/dev/null' _ "$PID"
+check "reset 1: removes runtime/, keeps the database" sh -c '[ ! -e "$1/runtime" ] && [ -f "$1/framemind.db" ]' _ "$DATA"
+OUT="$(reset_test '2\nDELETE\n')"
+check "reset 2: removes the whole data folder" test ! -e "$DATA"
 LAUNCHER_PID=""
 
 # --------------------------------------------------------------------------------------------------------

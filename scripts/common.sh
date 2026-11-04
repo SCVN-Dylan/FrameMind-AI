@@ -27,6 +27,13 @@ INDEX_HTML="$APP_DIR/submission/index.html"
 # Where Homebrew (Apple Silicon: /opt/homebrew, Intel: /usr/local) and its tools live. Overridable for tests.
 TOOL_DIRS="${FRAMEMIND_TOOL_DIRS:-/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin}"
 
+# FrameMind keeps its own copy of Codex CLI in runtime/codex/<version> and updates it to the latest release at
+# each start (when online). Updating or removing any other Codex on this Mac does not affect it. It shares the
+# ChatGPT sign-in (~/.codex). runtime/codex/current names the version in use.
+CODEX_HOME_DIR="$RUNTIME_DIR/codex"
+CODEX_CURRENT_FILE="$CODEX_HOME_DIR/current"
+CODEX_REGISTRY="${FRAMEMIND_CODEX_REGISTRY:-https://registry.npmjs.org}"
+
 DEFAULT_PORT=8000
 PORT_FALLBACK_COUNT=20
 MIN_MACOS_MAJOR=12
@@ -132,8 +139,33 @@ find_python() {
   return 1
 }
 
+# The version of FrameMind's own Codex in use (empty if none was downloaded).
+own_codex_version() {
+  local version=""
+  [ -f "$CODEX_CURRENT_FILE" ] && IFS= read -r version < "$CODEX_CURRENT_FILE"
+  case "$version" in *[!0-9.]*|'') return 1 ;; esac
+  [ -x "$CODEX_HOME_DIR/$version/bin/codex" ] || return 1
+  printf '%s\n' "$version"
+}
+
+# FrameMind's own Codex if it has been downloaded, else the one on PATH.
 find_codex() {
+  local version
+  if version="$(own_codex_version)"; then
+    printf '%s\n' "$CODEX_HOME_DIR/$version/bin/codex"
+    return 0
+  fi
   command -v codex 2>/dev/null
+}
+
+# "<npm platform> <Rust target>" of the Codex package for this Mac. Apple Silicon gets the arm64 build even when
+# Terminal runs under Rosetta.
+codex_platform() {
+  if [ "$(uname -m)" = "arm64" ] || [ "$(sysctl -in hw.optional.arm64 2>/dev/null)" = "1" ]; then
+    printf '%s\n' "darwin-arm64 aarch64-apple-darwin"
+  else
+    printf '%s\n' "darwin-x64 x86_64-apple-darwin"
+  fi
 }
 
 # --- Configuration ---------------------------------------------------------------------------------------
