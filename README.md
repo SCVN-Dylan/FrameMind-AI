@@ -194,8 +194,8 @@ mirrors the Next.js UI: Dashboard, New Analysis, History and Settings, in EN / V
 `Start FrameMind.command` (double-click) sets up and starts everything for the standalone page — no Next.js, no build:
 
 1. Checks macOS (12+, Apple Silicon or Intel), the app files, Python 3.9–3.13 and FFmpeg; Codex CLI is optional.
-   Anything missing is explained and installed only after a `y` (Homebrew: official installer; then
-   `brew install python@3.12` / `ffmpeg`). No `sudo`, no `eval`. Codex CLI is FrameMind's own copy of the
+   Anything missing is explained and installed only after **Yes** in a dialog (`osascript`; a typed `y` when no
+   dialog can be shown). Homebrew uses its official installer, then `brew install python@3.12` / `ffmpeg`. No `sudo`, no `eval`. Codex CLI is FrameMind's own copy of the
    latest release: the official npm package for the platform, checked against the registry's SHA-512, extracted to
    `runtime/codex/<version>` and updated at each start (the first download asks; a failed update keeps the current
    copy). Without it, the `codex` on PATH is used. If a Codex version cannot start with FrameMind's own permission
@@ -220,7 +220,7 @@ The same ZIP also contains `Start FrameMind.bat` / `Stop FrameMind.bat`, which r
 `stop.ps1` with the built-in Windows PowerShell 5.1 (`-ExecutionPolicy Bypass` for that run only). The steps mirror the
 macOS launcher: Python 3.9–3.13 (`winget install Python.Python.3.12 --scope user`), FFmpeg (`winget install
 Gyan.FFmpeg`) and optionally FrameMind's own, auto-updated Codex CLI (downloaded and checked like on macOS,
-extracted with the built-in `tar.exe`), each only after a `y`; the venv and data live in
+extracted with the built-in `tar.exe`), each only after **Yes** in a dialog (WinForms MessageBox; typed `y` as fallback); the venv and data live in
 `%LOCALAPPDATA%\FrameMind AI`. The backend runs in the launcher's console, so Ctrl+C or closing the window stops it;
 `Stop FrameMind.bat` stops it after checking the PID file, the venv interpreter path and `/api/health`. On Windows the
 backend stops Codex with `taskkill /T /F` (no process groups) instead of `killpg`. The scripts must stay ASCII with

@@ -52,7 +52,25 @@ function Fail-Line([string[]]$Lines) {
   foreach ($line in ($Lines | Select-Object -Skip 1)) { Write-Host "           $line" }
 }
 
-function Ask-YesNo([string]$Question) {
+# Yes/No question. In a console window it is a Windows dialog with Yes / No buttons (kept on top of other
+# windows). If no dialog can be shown, or input is redirected, it is asked in the console: type y.
+function Ask-YesNo([string]$Question, [string]$Detail = '') {
+  if ($env:FRAMEMIND_DIALOGS -ne '0' -and [Environment]::UserInteractive -and -not [Console]::IsInputRedirected) {
+    try {
+      Add-Type -AssemblyName System.Windows.Forms
+      $text = $Question
+      if ($Detail) { $text += "`r`n`r`n" + $Detail }
+      Write-Host ''
+      Write-Host "    $Question (answer in the window that just opened)"
+      $owner = New-Object System.Windows.Forms.Form -Property @{ TopMost = $true }
+      try {
+        $result = [System.Windows.Forms.MessageBox]::Show($owner, $text, 'FrameMind AI', 'YesNo', 'Question')
+      } finally { $owner.Dispose() }
+      if ($result -eq [System.Windows.Forms.DialogResult]::Yes) { Ok 'Yes'; return $true }
+      Info 'Not now.'
+      return $false
+    } catch { }
+  }
   $answer = Read-Host "    $Question [y/N]"
   return ($answer -match '^\s*(y|yes)\s*$')
 }
@@ -170,7 +188,7 @@ function Install-WithWinget([string]$Name, [string]$Id, [string[]]$Extra) {
   }
   Info "It will be installed with: winget install --id $Id --exact $($Extra -join ' ')"
   Info "(This accepts the package's license through winget. Windows may ask for permission.)"
-  if (-not (Ask-YesNo "Install $Name now?")) { Warn "$Name was not installed."; return $false }
+  if (-not (Ask-YesNo "Install $Name now?" "FrameMind AI needs it. It will be installed with: winget install --id $Id --exact")) { Warn "$Name was not installed."; return $false }
   & winget install --id $Id --exact --accept-package-agreements --accept-source-agreements @Extra | Out-Host
   $code = $LASTEXITCODE
   Update-SessionPath

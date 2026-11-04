@@ -187,6 +187,24 @@ mv "$APP/submission/index.html.bak" "$APP/submission/index.html"
 check "missing index.html is reported (exit 2)" sh -c '[ "$1" = 2 ]' _ "$STATUS"
 check "missing index.html message" contains "$OUT" "submission/index.html"
 
+# Yes/No questions: a dialog when stdin is a terminal (`script` provides one here, with a fake osascript),
+# the terminal question when no dialog can be shown.
+dialog_answer() {  # dialog_answer <what the fake osascript prints, empty = it fails> <typed answer>
+  mkdir -p "$WORK/fake-osa"
+  if [ -n "$1" ]; then printf '#!/bin/bash\ncat >/dev/null\necho %s\n' "$1"; else printf '#!/bin/bash\nexit 1\n'; fi \
+    > "$WORK/fake-osa/osascript"
+  chmod +x "$WORK/fake-osa/osascript"
+  printf '%s\n' "$2" | PATH="$WORK/fake-osa:$PATH" script -q /dev/null /bin/bash -c \
+    'APP_DIR="$1"; . "$1/scripts/common.sh"; if ask_yes_no "Install X now?" "why"; then echo RESULT=yes; else echo RESULT=no; fi' _ "$APP" |
+    tr -d '\r'
+}
+check "dialog: Yes installs" contains "$(dialog_answer Yes n)" "RESULT=yes"
+check "dialog: Not now declines" contains "$(dialog_answer No y)" "RESULT=no"
+# (`script` on macOS does not pass piped input on reliably, so only the fallback prompt is checked here.)
+check "no dialog possible: asks in the terminal" contains "$(dialog_answer "" y)" "[y/N]"
+OUT="$(printf 'y\n' | PATH="$WORK/fake-osa:$PATH" /bin/bash -c 'APP_DIR="$1"; . "$1/scripts/common.sh"; ask_yes_no "Q?" && echo RESULT=yes' _ "$APP" 2>&1)"
+check "piped input: asked in the terminal, never a dialog" sh -c 'case "$1" in *"[y/N]"*RESULT=yes) exit 0;; esac; exit 1' _ "$OUT"
+
 # Real tools on this Mac (read-only checks).
 OUT="$(FRAMEMIND_DATA_DIR="$DATA" /bin/bash "$APP/scripts/check_dependencies.sh" < /dev/null 2>&1)"; STATUS=$?
 check "real Mac: dependencies found (exit 0)" test "$STATUS" = 0

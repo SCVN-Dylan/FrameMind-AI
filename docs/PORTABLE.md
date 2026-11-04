@@ -9,7 +9,7 @@ On Windows, use `Start FrameMind.bat` and see `README-Windows.md`.
 1. Copy `FrameMind-Portable.zip` to the Mac (AirDrop, USB drive, cloud drive, …).
 2. Double-click the ZIP to extract it. You can move the `FrameMind-Portable` folder anywhere you like; paths with spaces work.
 3. Double-click **`Start FrameMind.command`**.
-4. If something is missing, the window explains what it is and how it will be installed. It asks before each installation. Type `y` and press Return to accept.
+4. If something is missing, the window explains what it is and how it will be installed. It asks before each installation in a small window: click **Yes** to accept or **Not now** to skip. (If no window can be shown, for example over SSH, the question is asked in Terminal: type `y` and press Return.)
 5. Your default browser opens FrameMind AI. In Safari a short "Opening FrameMind AI…" tab appears and closes by itself. Keep the Terminal window open while you use the app.
 6. For AI analysis, open **Settings → AI Provider → Login with ChatGPT** (only needed once).
 
@@ -26,7 +26,7 @@ If the folder is in Downloads, Desktop or Documents, macOS may also ask whether 
 
 ## What the launcher installs
 
-It only installs what this Mac is missing, and only after you answer `y`. Nothing is installed with `sudo` by the launcher.
+It only installs what this Mac is missing, and only after you click **Yes**. Nothing is installed with `sudo` by the launcher.
 
 | Tool | Why | How it is installed |
 | --- | --- | --- |
@@ -111,14 +111,14 @@ Pages opened from disk send `Origin: null`, and so do sandboxed frames on any we
 | Message / symptom | What to do |
 | --- | --- |
 | *cannot be opened* / *could not be verified* | See "The first time macOS blocks the file" above. |
-| *A required tool is missing* | Run the launcher again and answer `y`, or install the tool yourself (commands above). |
+| *A required tool is missing* | Run the launcher again and click **Yes**, or install the tool yourself (commands above). |
 | *Installing the Python packages failed* | Usually there is no internet, or a proxy blocks pypi.org. Connect and start again. |
 | *Port … is used by another program* | Nothing to do: the next free port is used. To choose a port, set `PORT=` in `launcher.conf`. |
 | *The backend did not answer its health check* | Read the lines printed under the error, or `logs/backend.log`. |
 | The page shows **AI Backend Offline** | The Terminal window was closed. Start FrameMind again. |
 | The page asks for a pairing code | Copy the code from the Terminal window into Settings → Local backend. |
 | Codex shows **Not signed in** | Settings → AI Provider → Login with ChatGPT. |
-| Codex **not installed** | Start FrameMind again and answer `y` to download its Codex CLI. |
+| Codex **not installed** | Start FrameMind again and click **Yes** to download its Codex CLI. |
 | *Codex exited with an error* | Read the line shown in the app, or `logs/backend.log` (sign-in expired, usage limit, network). Sandbox start-up problems with a new Codex are retried automatically. |
 | Python environment errors | Delete `~/Library/Application Support/FrameMind AI/runtime` and start again (your data is kept). |
 

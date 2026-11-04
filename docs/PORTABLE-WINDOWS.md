@@ -7,7 +7,7 @@ The same ZIP runs on macOS and Windows. On Windows, use **`Start FrameMind.bat`*
 1. Copy `FrameMind-Portable.zip` to the PC.
 2. Right-click the ZIP and choose **Extract All…**. Running it from inside the ZIP does not work. You can put the `FrameMind-Portable` folder anywhere you like, and paths with spaces work.
 3. Double-click **`Start FrameMind.bat`**.
-4. If something is missing, the window explains what it is and how it will be installed. It asks before each installation: type `y` and press Enter.
+4. If something is missing, the window explains what it is and how it will be installed. It asks before each installation in a small window: click **Yes** to accept or **No** to skip.
 5. Your default browser opens FrameMind AI. Keep the black window open while you use the app.
 6. For AI analysis, open **Settings → AI Provider → Login with ChatGPT**. You only need to do this once on each PC.
 
@@ -17,7 +17,7 @@ Files from the internet may show **"Windows protected your PC"** (SmartScreen), 
 
 ## What the launcher installs
 
-It only installs what the PC is missing, and only after you answer `y`. It uses **winget** (App Installer, built into Windows 10 2004+ and Windows 11). Node.js is not needed.
+It only installs what the PC is missing, and only after you click **Yes**. It uses **winget** (App Installer, built into Windows 10 2004+ and Windows 11). Node.js is not needed.
 
 | Tool | Why | How it is installed |
 | --- | --- | --- |

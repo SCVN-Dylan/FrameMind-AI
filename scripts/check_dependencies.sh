@@ -72,7 +72,8 @@ ensure_homebrew() {
   info "Homebrew is needed to install it."
   info "Installing it downloads the official installer from https://github.com/Homebrew/install and runs it."
   info "The installer explains each step and asks for your macOS password itself (administrator account needed)."
-  if ! ask_yes_no "Install Homebrew now?"; then
+  if ! ask_yes_no "Install Homebrew now?" \
+      "Homebrew is needed to install the missing tools. Its official installer then continues in the Terminal window and asks for your macOS password (administrator account needed)."; then
     warn "Homebrew was not installed."
     return 1
   fi
@@ -105,7 +106,7 @@ brew_install() {
   local label="$1"; shift
   ensure_homebrew || return 1
   info "It will be installed with Homebrew: brew install $*"
-  if ! ask_yes_no "Install $label now?"; then
+  if ! ask_yes_no "Install $label now?" "FrameMind AI needs it. It will be installed with Homebrew: brew install $*"; then
     warn "$label was not installed."
     return 1
   fi
@@ -231,7 +232,8 @@ update_own_codex() {
     info "FrameMind AI keeps its own copy of Codex CLI, the official OpenAI package (about 150 MB), in"
     info "$CODEX_HOME_DIR. It is updated to the latest release each time FrameMind AI starts,"
     info "and uses the same ChatGPT sign-in. Any other Codex on this Mac is not changed."
-    ask_yes_no "Download Codex CLI $latest for FrameMind AI now?" || { warn "Codex CLI was not downloaded."; return 0; }
+    ask_yes_no "Download Codex CLI $latest for FrameMind AI now?" \
+      "Codex CLI runs the AI analysis with your ChatGPT account. FrameMind AI keeps its own copy (the official OpenAI package, about 150 MB) and updates it each time it starts. Any other Codex on this Mac is not changed." || { warn "Codex CLI was not downloaded."; return 0; }
   else
     info "Updating FrameMind AI's Codex CLI: $current → $latest"
   fi

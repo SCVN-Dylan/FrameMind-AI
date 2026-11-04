@@ -141,7 +141,9 @@ function Update-OwnCodex {
     Info 'FrameMind AI keeps its own copy of Codex CLI, the official OpenAI package (about 200 MB), in'
     Info "$CodexHomeDir. It is updated to the latest release each time FrameMind AI starts,"
     Info 'and uses the same ChatGPT sign-in. Any other Codex on this PC is not changed.'
-    if (-not (Ask-YesNo "Download Codex CLI $latest for FrameMind AI now?")) { Warn 'Codex CLI was not downloaded.'; return }
+    $detail = 'Codex CLI runs the AI analysis with your ChatGPT account. FrameMind AI keeps its own copy (the official ' +
+      'OpenAI package, about 200 MB) and updates it each time it starts. Any other Codex on this PC is not changed.'
+    if (-not (Ask-YesNo "Download Codex CLI $latest for FrameMind AI now?" $detail)) { Warn 'Codex CLI was not downloaded.'; return }
   } else {
     Info "Updating FrameMind AI's Codex CLI: $current -> $latest"
   }

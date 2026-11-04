@@ -60,10 +60,20 @@ error() {
   for line in "$@"; do printf '  %s\n' "$line" >&2; done
 }
 
-# ask_yes_no "Question" -> 0 for yes. Anything else, including no input (EOF), is "no".
+# ask_yes_no "Question" ["explanation"] -> 0 for yes. Anything else, including no input (EOF), is "no".
+# In a Terminal window the question is a macOS dialog with Yes / Not now buttons. Without a window (SSH, tests:
+# stdin is not a terminal) or if the dialog cannot be shown, it is asked in the terminal: type y.
 ask_yes_no() {
-  local answer=""
-  printf '\n%s? %s%s [y/N] ' "$C_BOLD" "$1" "$C_RESET"
+  local question="$1" detail="${2:-}" answer=""
+  if [ -t 0 ] && [ "${FRAMEMIND_DIALOGS:-1}" = 1 ] && command -v osascript >/dev/null 2>&1; then
+    printf '\n%s? %s%s (answer in the window that just opened)\n' "$C_BOLD" "$question" "$C_RESET"
+    answer="$(ask_dialog "$question" "$detail")"
+    case "$answer" in
+      Yes) ok "Yes"; return 0 ;;
+      No) info "Not now."; return 1 ;;
+    esac
+  fi
+  printf '\n%s? %s%s [y/N] ' "$C_BOLD" "$question" "$C_RESET"
   if ! IFS= read -r answer; then
     printf '\n'
     return 1
@@ -72,6 +82,23 @@ ask_yes_no() {
     y|Y|yes|YES|Yes) return 0 ;;
     *) return 1 ;;
   esac
+}
+
+# Prints Yes or No from a dialog, or nothing if no dialog could be shown. Text is passed as arguments, never
+# put into the script itself.
+ask_dialog() {
+  osascript - "$1" "$2" 2>/dev/null <<'APPLESCRIPT'
+on run argv
+  set message to item 1 of argv
+  if item 2 of argv is not "" then set message to message & return & return & item 2 of argv
+  try
+    display dialog message with title "FrameMind AI" buttons {"Not now", "Yes"} default button "Yes" cancel button "Not now" with icon note
+    return "Yes"
+  on error number -128
+    return "No"
+  end try
+end run
+APPLESCRIPT
 }
 
 # --- Environment -----------------------------------------------------------------------------------------
