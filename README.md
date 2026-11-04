@@ -210,10 +210,6 @@ mirrors the Next.js UI: Dashboard, New Analysis, History and Settings, in EN / V
    through `localStorage` (shared by its file:// pages).
 5. Keeps running until Control-C, the window is closed, or `Stop FrameMind.command` — then stops only its own backend.
 
-`Reset FrameMind.command` (`scripts/reset.sh`; Windows: `Reset FrameMind.bat` → `scripts/windows/reset.ps1`) stops the
-backend, then removes either `runtime/` (venv and Codex; data kept) or, after typing `DELETE`, the whole data folder. It
-only deletes a folder named `FrameMind AI`, and never touches Homebrew/winget tools or `~/.codex`.
-
 Build the ZIP with `scripts/build_portable.sh` (→ `dist/FrameMind-Portable.zip`, git-ignored; only runtime files, checked
 for private files). Test with `scripts/tests/test_launcher.sh` (mocks for installations; a real backend and venv in a
 throwaway folder). End-user instructions: [docs/PORTABLE.md](docs/PORTABLE.md) (shipped as the package's README).

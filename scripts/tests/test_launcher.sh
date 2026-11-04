@@ -36,12 +36,11 @@ printf 'Work dir: %s\n' "$WORK"
 
 # --------------------------------------------------------------------------------------------------------
 section "1. Syntax and permissions"
-for f in "$REPO/Start FrameMind.command" "$REPO/Stop FrameMind.command" "$REPO/Reset FrameMind.command" "$REPO"/scripts/*.sh; do
+for f in "$REPO/Start FrameMind.command" "$REPO/Stop FrameMind.command" "$REPO"/scripts/*.sh; do
   check "bash -n $(basename "$f")" /bin/bash -n "$f"
 done
 check "Start FrameMind.command is executable" test -x "$REPO/Start FrameMind.command"
 check "Stop FrameMind.command is executable" test -x "$REPO/Stop FrameMind.command"
-check "Reset FrameMind.command is executable" test -x "$REPO/Reset FrameMind.command"
 check "launcher scripts use no eval" sh -c '! grep -nE "(^|[;&| ])eval " "$1"/scripts/*.sh "$1"/*.command' _ "$REPO"
 check "launcher scripts never call sudo" sh -c '! grep -nE "(^|[;&| ])sudo " "$1"/scripts/*.sh "$1"/*.command' _ "$REPO"
 
@@ -51,8 +50,6 @@ section "2. Package (ZIP) contents"
 ZIP="$WORK/dist/FrameMind-Portable.zip"
 LISTING="$(unzip -Z1 "$ZIP")"
 for wanted in "FrameMind-Portable/Start FrameMind.command" "FrameMind-Portable/Stop FrameMind.command" \
-  "FrameMind-Portable/Reset FrameMind.command" FrameMind-Portable/scripts/reset.sh \
-  "FrameMind-Portable/Reset FrameMind.bat" FrameMind-Portable/scripts/windows/reset.ps1 \
   FrameMind-Portable/submission/index.html FrameMind-Portable/backend/requirements.txt FrameMind-Portable/backend/app/main.py \
   FrameMind-Portable/scripts/setup.sh FrameMind-Portable/scripts/start_backend.sh FrameMind-Portable/scripts/check_dependencies.sh \
   FrameMind-Portable/README.md; do
@@ -65,8 +62,6 @@ mkdir -p "$APP_PARENT"
 check "extracted to a path with spaces" test -f "$APP/submission/index.html"
 check "executable bit kept in ZIP (Start)" test -x "$APP/Start FrameMind.command"
 check "executable bit kept in ZIP (scripts)" test -x "$APP/scripts/start_backend.sh"
-check "ZIP has the Privacy & Security shortcut" \
-  grep -q "x-apple.systempreferences:com.apple.settings.PrivacySecurity.extension" "$APP/Open Security Settings.webloc"
 
 # --------------------------------------------------------------------------------------------------------
 section "3. Dependency detection and installation prompts (mocks)"
@@ -337,25 +332,6 @@ read -r PID PORT < "$DATA/run/backend.pid"
 sleep 2
 check "Stop FrameMind: launcher window reports a normal stop" grep -q "was stopped" "$WORK/launcher-d.log"
 check "Stop FrameMind: no false crash report" sh -c '! grep -q "stopped unexpectedly" "$1"' _ "$WORK/launcher-d.log"
-LAUNCHER_PID=""
-
-# --------------------------------------------------------------------------------------------------------
-section "8. Reset FrameMind (throwaway data folder only)"
-# Never the real data folder: every reset below targets $DATA inside this test's work dir.
-case "$DATA" in "$WORK"/*) ;; *) echo "refusing: test data folder is outside $WORK" >&2; exit 1 ;; esac
-reset_test() { printf '%b' "$1" | FRAMEMIND_DATA_DIR="$DATA" /bin/bash "$APP/scripts/reset.sh" 2>&1; }
-run_launcher e
-read -r PID PORT < "$DATA/run/backend.pid"
-OUT="$(reset_test '\n')"
-check "reset: just Return cancels" sh -c 'case "$1" in *"Nothing was removed"*) ;; *) exit 1;; esac; [ -d "$2/runtime" ] && kill -0 "$3"' _ "$OUT" "$DATA" "$PID"
-OUT="$(reset_test '2\ndelete\n')"
-check "reset: everything needs DELETE exactly" sh -c 'case "$1" in *"Nothing was removed"*) ;; *) exit 1;; esac; [ -f "$2/framemind.db" ]' _ "$OUT" "$DATA"
-OUT="$(reset_test '1\n')"
-sleep 1
-check "reset 1: stops the running backend" sh -c '! kill -0 "$1" 2>/dev/null' _ "$PID"
-check "reset 1: removes runtime/, keeps the database" sh -c '[ ! -e "$1/runtime" ] && [ -f "$1/framemind.db" ]' _ "$DATA"
-OUT="$(reset_test '2\nDELETE\n')"
-check "reset 2: removes the whole data folder" test ! -e "$DATA"
 LAUNCHER_PID=""
 
 # --------------------------------------------------------------------------------------------------------

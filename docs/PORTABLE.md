@@ -17,7 +17,7 @@ On Windows, use `Start FrameMind.bat` and see `README-Windows.md`.
 
 Files that come from the internet or AirDrop are checked by Gatekeeper. Because the launcher is a script and not a signed app, macOS may say it *"cannot be opened"* or *"could not be verified"*.
 
-- **macOS 15 (Sequoia) and newer:** click **Done**, then double-click **`Open Security Settings`** in the same folder. It opens **System Settings → Privacy & Security** for you: click **Open Anyway** next to *"Start FrameMind.command was blocked…"* (near the bottom, under Security) and confirm. If no button is shown, double-click `Start FrameMind.command` once more, then open the settings again.
+- **macOS 15 (Sequoia) and newer:** click **Done**. Then open **System Settings → Privacy & Security**, scroll to *"Start FrameMind.command was blocked…"*, click **Open Anyway** and confirm.
 - **macOS 12–14:** Control-click (or right-click) `Start FrameMind.command`, choose **Open**, then click **Open** again.
 
 You only have to do this once. The launcher never turns Gatekeeper off or removes macOS security flags.
@@ -90,13 +90,6 @@ To start over without touching anything else, use **Settings → Data Management
 confirm). It deletes the videos, frames, sessions, analyses and feedback above and keeps `framemind.db` (empty), your
 selected AI model, the pairing code, the language, `runtime/`, `logs/` and your ChatGPT sign-in. It cannot be undone.
 
-To set FrameMind AI up again from scratch, double-click **`Reset FrameMind.command`**. It stops FrameMind AI, then asks:
-
-- **1 — Reinstall:** removes `runtime/` (the Python environment and FrameMind AI's Codex CLI). Your sessions, videos and settings are kept. The next start installs them again.
-- **2 — Remove everything:** deletes the whole folder above (type `DELETE` to confirm). It cannot be undone.
-
-Homebrew tools (Python, FFmpeg), any other Codex and your ChatGPT sign-in are never touched.
-
 To use another port than 8000, create `launcher.conf` there with a line such as `PORT=8765`. If the port is busy, the launcher uses the next free one.
 
 ## Stopping
@@ -127,6 +120,6 @@ Pages opened from disk send `Origin: null`, and so do sandboxed frames on any we
 | Codex shows **Not signed in** | Settings → AI Provider → Login with ChatGPT. |
 | Codex **not installed** | Start FrameMind again and answer `y` to download its Codex CLI. |
 | *Codex exited with an error* | Read the line shown in the app, or `logs/backend.log` (sign-in expired, usage limit, network). Sandbox start-up problems with a new Codex are retried automatically. |
-| Python environment errors | Double-click `Reset FrameMind.command`, choose **1**, then start again (your data is kept). |
+| Python environment errors | Delete `~/Library/Application Support/FrameMind AI/runtime` and start again (your data is kept). |
 
 To check the tools without starting anything, run `scripts/check_dependencies.sh` in Terminal.

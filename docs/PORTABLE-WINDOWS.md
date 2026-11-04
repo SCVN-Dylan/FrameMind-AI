@@ -43,8 +43,6 @@ The first launch needs internet and takes a few minutes. If a tool was just inst
 
 Moving, replacing or deleting the app folder does not touch this data. To start over, use **Settings → Data Management → Clear All Data**.
 
-To set FrameMind AI up again from scratch, double-click **`Reset FrameMind.bat`**. It stops FrameMind AI, then asks: **1** removes `runtime\` (the Python environment and FrameMind AI's Codex CLI) and keeps your data; **2** deletes the whole folder (type `DELETE` to confirm; it cannot be undone). winget tools, any other Codex and your ChatGPT sign-in are never touched.
-
 ## Stopping
 
 Any of these stops the backend: press **Ctrl+C** in the FrameMind window, close the window, or double-click **`Stop FrameMind.bat`**. Only the backend that the launcher started is stopped.
@@ -60,7 +58,7 @@ Any of these stops the backend: press **Ctrl+C** in the FrameMind window, close 
 | *The backend did not answer its health check* | Read the lines printed under the error, or `logs\backend.err.log`. |
 | The page shows **AI Backend Offline** | The FrameMind window was closed. Start it again. |
 | *Codex exited with an error* | Run `codex exec --skip-git-repo-check "say hi"` in a terminal to see Codex's own message (sign-in expired, usage limit, network). |
-| Python environment errors | Double-click `Reset FrameMind.bat`, choose **1**, then start again. Your data is kept. |
+| Python environment errors | Delete `%LOCALAPPDATA%\FrameMind AI\runtime` and start again. Your data is kept. |
 
 ## Known limitations
 
