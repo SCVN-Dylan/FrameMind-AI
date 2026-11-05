@@ -313,6 +313,20 @@ dl.kv dt { color: var(--muted); } dl.kv dd { margin: 0; }
 details summary { cursor: pointer; }
 ol.clean, ul.clean { list-style: none; margin: 0; padding: 0; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+.lightbox { position: fixed; inset: 0; z-index: 60; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 56px 72px 24px; background: rgba(0,0,0,.88); backdrop-filter: blur(4px); }
+.lightbox img { max-width: 100%; max-height: calc(100vh - 140px); object-fit: contain; border-radius: 8px; box-shadow: 0 25px 50px rgba(0,0,0,.6); cursor: zoom-out; }
+.lightbox-btn { position: absolute; display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 9999px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); color: #fff; cursor: pointer; }
+.lightbox-btn:hover { background: rgba(255,255,255,.18); }
+.lightbox-btn:focus-visible { outline: 2px solid var(--primary-soft); outline-offset: 2px; }
+.lightbox-close { top: 12px; right: 12px; }
+.lightbox-prev { left: 16px; top: 50%; transform: translateY(-50%); }
+.lightbox-prev svg { transform: rotate(180deg); }
+.lightbox-next { right: 16px; top: 50%; transform: translateY(-50%); }
+.lightbox-caption { color: #fff; font-size: 13px; margin: 0; }
+.thumb-zoom { display: block; width: 100%; padding: 0; overflow: hidden; border-radius: 8px; background: #000; cursor: zoom-in; transition: box-shadow .2s; }
+.thumb-zoom:hover { box-shadow: 0 0 0 2px rgba(167,139,250,.7); }
+.thumb-zoom:focus-visible { outline: 2px solid var(--primary-soft); outline-offset: 2px; }
+@media (max-width: 640px) { .lightbox { padding: 56px 8px 72px; } .lightbox-prev, .lightbox-next { top: auto; bottom: 16px; transform: none; } }
 </style>
 </head>
 <body>
@@ -572,6 +586,10 @@ const en = {
         impact: "Why it matters",
         suggestedFix: "How to improve",
         evidence: "Evidence frames",
+        enlarge: "Click to enlarge",
+        closeImage: "Close",
+        prevImage: "Previous frame",
+        nextImage: "Next frame",
         confidenceLabel: "Confidence",
         confidence: { high: "High confidence", medium: "Medium confidence", low: "Low confidence" },
         aiNotice: "Real feedback from the local Codex CLI, based only on the frames that were sent. Review it before acting on it.",
@@ -1098,6 +1116,10 @@ const vi = {
         impact: "Vì sao quan trọng",
         suggestedFix: "Cách cải thiện",
         evidence: "Frame làm bằng chứng",
+        enlarge: "Bấm để phóng to",
+        closeImage: "Đóng",
+        prevImage: "Frame trước",
+        nextImage: "Frame sau",
         confidenceLabel: "Độ tin cậy",
         confidence: { high: "Tin cậy cao", medium: "Tin cậy trung bình", low: "Tin cậy thấp" },
         aiNotice: "Feedback thật từ Codex CLI trên máy, chỉ dựa trên các frame đã gửi. Hãy xem xét trước khi áp dụng.",
@@ -1624,6 +1646,10 @@ const ko = {
         impact: "중요한 이유",
         suggestedFix: "개선 방법",
         evidence: "근거 프레임",
+        enlarge: "클릭하여 크게 보기",
+        closeImage: "닫기",
+        prevImage: "이전 프레임",
+        nextImage: "다음 프레임",
         confidenceLabel: "신뢰도",
         confidence: { high: "신뢰도 높음", medium: "신뢰도 보통", low: "신뢰도 낮음" },
         aiNotice: "전송된 프레임만을 근거로 한 로컬 Codex CLI의 실제 피드백입니다. 적용하기 전에 검토하세요.",
@@ -3776,14 +3802,52 @@ function feedbackCard(item, index) {
       item.suggestedFix ? section(F.suggestedFix, item.suggestedFix) : null,
       item.evidence && item.evidence.length ? h("div", null, h("p", { class: "label-up" }, F.evidence),
         h("ul", { class: "thumbs", style: { marginTop: "8px" } }, item.evidence.map((ev) => h("li", { class: "thumb", style: { width: "112px" } },
-          h("div", { style: { overflow: "hidden", borderRadius: "8px", border: `1px solid ${ev.slot === "reference" ? "rgba(167,139,250,.4)" : "rgba(59,130,246,.4)"}`, background: "#000" } },
-            ev.imageUrl ? h("img", { src: ev.imageUrl, alt: `${ev.label} ${formatTime(ev.ms, 3)}`, loading: "lazy", style: { display: "block", width: "100%", aspectRatio: "16/9", objectFit: "contain" } })
-              : h("div", { class: "tiny muted", style: { aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center" } }, ev.label)),
+          ev.imageUrl
+            ? h("button", { type: "button", class: "thumb-zoom", title: F.enlarge, "aria-label": `${F.enlarge}: ${ev.label} ${formatTime(ev.ms, 3)}`,
+                style: { border: `1px solid ${ev.slot === "reference" ? "rgba(167,139,250,.4)" : "rgba(59,130,246,.4)"}` },
+                onclick: (e) => openLightbox(item.evidence.filter((x) => x.imageUrl), item.evidence.filter((x) => x.imageUrl).indexOf(ev), e.currentTarget) },
+                h("img", { src: ev.imageUrl, alt: `${ev.label} ${formatTime(ev.ms, 3)}`, loading: "lazy", style: { display: "block", width: "100%", aspectRatio: "16/9", objectFit: "contain" } }))
+            : h("div", { style: { overflow: "hidden", borderRadius: "8px", border: `1px solid ${ev.slot === "reference" ? "rgba(167,139,250,.4)" : "rgba(59,130,246,.4)"}`, background: "#000" } },
+                h("div", { class: "tiny muted", style: { aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center" } }, ev.label)),
           h("p", { class: `mono tiny center ${ev.slot === "reference" ? "soft" : "accent"}`, style: { margin: "4px 0 0" } }, `${ev.label} · ${formatTime(ev.ms, 3)}`))))) : null,
       h("div", { class: "fix-box" },
         h("p", { class: "row label-up soft" }, icon("wrench", 14), F.unityFix),
         h("ol", { class: "clean col gap6", style: { marginTop: "12px" } }, item.unityFix.map((step, i) => h("li", { class: "row sm", style: { alignItems: "flex-start", gap: "12px" } },
           h("span", { class: "num", style: { borderRadius: "9999px", background: "rgba(124,58,237,.2)", color: "var(--primary-soft)", marginTop: 0 } }, String(i + 1)), h("span", null, step)))))) : null);
+}
+
+/** Full-screen view of the evidence frames: click, Esc or the X closes it; arrow keys switch frames. */
+function openLightbox(frames, index, trigger) {
+  if (!frames.length) return;
+  const F = t().feedback;
+  let i = Math.max(0, index);
+  const img = h("img", { alt: "" });
+  const caption = h("p", { class: "lightbox-caption mono" });
+  const show = () => {
+    const ev = frames[i];
+    img.src = ev.imageUrl;
+    img.alt = `${ev.label} ${formatTime(ev.ms, 3)}`;
+    caption.textContent = `${ev.label} · ${formatTime(ev.ms, 3)}${frames.length > 1 ? `   (${i + 1}/${frames.length})` : ""}`;
+    caption.className = `lightbox-caption mono ${ev.slot === "reference" ? "soft" : "accent"}`;
+  };
+  const go = (d) => { i = (i + d + frames.length) % frames.length; show(); };
+  const close = () => { box.remove(); document.removeEventListener("keydown", onKey, true); if (trigger && trigger.isConnected) trigger.focus(); };
+  const onKey = (e) => {
+    if (e.key === "Escape") { e.stopPropagation(); e.preventDefault(); close(); }
+    else if (e.key === "ArrowLeft" && frames.length > 1) { e.preventDefault(); go(-1); }
+    else if (e.key === "ArrowRight" && frames.length > 1) { e.preventDefault(); go(1); }
+  };
+  const closeBtn = h("button", { type: "button", class: "lightbox-btn lightbox-close", "aria-label": F.closeImage, title: F.closeImage, onclick: close }, icon("x", 22));
+  const box = h("div", { class: "lightbox", role: "dialog", "aria-modal": "true", "aria-label": F.evidence,
+      onclick: (e) => { if (e.target === box || e.target === img) close(); } },
+    closeBtn,
+    frames.length > 1 ? h("button", { type: "button", class: "lightbox-btn lightbox-prev", "aria-label": F.prevImage, title: F.prevImage, onclick: () => go(-1) }, icon("chevronRight", 24)) : null,
+    img, caption,
+    frames.length > 1 ? h("button", { type: "button", class: "lightbox-btn lightbox-next", "aria-label": F.nextImage, title: F.nextImage, onclick: () => go(1) }, icon("chevronRight", 24)) : null);
+  show();
+  document.addEventListener("keydown", onKey, true);
+  document.body.appendChild(box);
+  closeBtn.focus();
 }
 
 // ======================================================================================================

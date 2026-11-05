@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
+
 import { ConfidenceBadge, SeverityBadge } from "@/components/ui/Badge";
 import Icon from "@/components/ui/Icon";
 import { SEVERITY_META } from "@/lib/feedback";
@@ -150,29 +152,135 @@ function TimeChip({ icon, label, time, tone }: { icon: "film" | "video"; label: 
   );
 }
 
-/** The frames Codex cited for this issue. */
+/** The frames Codex cited for this issue. Clicking a frame opens it full screen. */
 function Evidence({ evidence }: { evidence: FeedbackEvidence[] }) {
   const { t } = useI18n();
+  const viewable = evidence.filter((frame) => frame.imageUrl);
+  const [open, setOpen] = useState<number | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   return (
     <div>
       <p className="text-xs font-semibold tracking-wide text-muted uppercase">{t.feedback.evidence}</p>
       <ul className="mt-2 flex gap-2 overflow-x-auto pb-1">
-        {evidence.map((frame) => (
-          <li key={frame.label} className="w-28 shrink-0">
-            <div className={`overflow-hidden rounded-lg border bg-black ${frame.slot === "reference" ? "border-primary-soft/40" : "border-accent/40"}`}>
+        {evidence.map((frame) => {
+          const border = frame.slot === "reference" ? "border-primary-soft/40" : "border-accent/40";
+          const caption = `${frame.label} ${formatTime(frame.ms, 3)}`;
+          return (
+            <li key={frame.label} className="w-28 shrink-0">
               {frame.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element -- served by the local backend
-                <img src={frame.imageUrl} alt={`${frame.label} ${formatTime(frame.ms, 3)}`} className="aspect-video w-full object-contain" loading="lazy" />
+                <button
+                  type="button"
+                  title={t.feedback.enlarge}
+                  aria-label={`${t.feedback.enlarge}: ${caption}`}
+                  onClick={(e) => {
+                    triggerRef.current = e.currentTarget;
+                    setOpen(viewable.indexOf(frame));
+                  }}
+                  className={`block w-full cursor-zoom-in overflow-hidden rounded-lg border bg-black transition-shadow hover:ring-2 hover:ring-primary-soft/70 focus-visible:outline-2 focus-visible:outline-primary-soft ${border}`}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element -- served by the local backend */}
+                  <img src={frame.imageUrl} alt={caption} className="aspect-video w-full object-contain" loading="lazy" />
+                </button>
               ) : (
-                <div className="flex aspect-video items-center justify-center text-[10px] text-muted">{frame.label}</div>
+                <div className={`overflow-hidden rounded-lg border bg-black ${border}`}>
+                  <div className="flex aspect-video items-center justify-center text-[10px] text-muted">{frame.label}</div>
+                </div>
               )}
-            </div>
-            <p className={`mt-1 text-center font-mono text-[10px] ${frame.slot === "reference" ? "text-primary-soft" : "text-accent"}`}>
-              {frame.label} · {formatTime(frame.ms, 3)}
-            </p>
-          </li>
-        ))}
+              <p className={`mt-1 text-center font-mono text-[10px] ${frame.slot === "reference" ? "text-primary-soft" : "text-accent"}`}>
+                {frame.label} · {formatTime(frame.ms, 3)}
+              </p>
+            </li>
+          );
+        })}
       </ul>
+      {open !== null && viewable.length > 0 && (
+        <Lightbox
+          frames={viewable}
+          index={open}
+          onIndex={setOpen}
+          onClose={() => {
+            setOpen(null);
+            triggerRef.current?.focus();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function Lightbox({
+  frames,
+  index,
+  onIndex,
+  onClose,
+}: {
+  frames: FeedbackEvidence[];
+  index: number;
+  onIndex: (i: number) => void;
+  onClose: () => void;
+}) {
+  const { t } = useI18n();
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const frame = frames[index];
+  const many = frames.length > 1;
+  const go = (d: number) => onIndex((index + d + frames.length) % frames.length);
+
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        e.preventDefault();
+        onClose();
+      } else if (many && e.key === "ArrowLeft") {
+        e.preventDefault();
+        onIndex((index - 1 + frames.length) % frames.length);
+      } else if (many && e.key === "ArrowRight") {
+        e.preventDefault();
+        onIndex((index + 1) % frames.length);
+      }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => document.removeEventListener("keydown", onKey, true);
+  }, [index, many, frames.length, onIndex, onClose]);
+
+  const btn =
+    "absolute flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white hover:bg-white/20 focus-visible:outline-2 focus-visible:outline-primary-soft";
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t.feedback.evidence}
+      onClick={(e) => {
+        if (e.target === e.currentTarget || (e.target as HTMLElement).tagName === "IMG") onClose();
+      }}
+      className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-3 bg-black/90 px-2 pt-14 pb-20 backdrop-blur-sm sm:px-[72px] sm:pb-6"
+    >
+      <button ref={closeRef} type="button" onClick={onClose} aria-label={t.feedback.closeImage} title={t.feedback.closeImage} className={`${btn} top-3 right-3`}>
+        <Icon name="x" size={22} />
+      </button>
+      {many && (
+        <button type="button" onClick={() => go(-1)} aria-label={t.feedback.prevImage} title={t.feedback.prevImage} className={`${btn} bottom-4 left-4 sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2`}>
+          <Icon name="chevronRight" size={24} className="rotate-180" />
+        </button>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element -- served by the local backend */}
+      <img
+        src={frame.imageUrl ?? undefined}
+        alt={`${frame.label} ${formatTime(frame.ms, 3)}`}
+        className="max-h-[calc(100vh-140px)] max-w-full cursor-zoom-out rounded-lg object-contain shadow-2xl"
+      />
+      <p className={`font-mono text-sm ${frame.slot === "reference" ? "text-primary-soft" : "text-accent"}`}>
+        {frame.label} · {formatTime(frame.ms, 3)}
+        {many && `   (${index + 1}/${frames.length})`}
+      </p>
+      {many && (
+        <button type="button" onClick={() => go(1)} aria-label={t.feedback.nextImage} title={t.feedback.nextImage} className={`${btn} right-4 bottom-4 sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2`}>
+          <Icon name="chevronRight" size={24} />
+        </button>
+      )}
     </div>
   );
 }
