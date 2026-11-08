@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import Icon from "@/components/ui/Icon";
+import { UnityProjectLine } from "@/components/settings/UnityProject";
 import VideoPanel, { type PlayerHighlight } from "@/components/video/VideoPanel";
 import { useMatchedMoments } from "@/hooks/useMatchedMoments";
 import { useAnalysisJob } from "@/hooks/useAnalysisJob";
@@ -436,7 +437,12 @@ export default function ComparisonWorkspace() {
         onAnalyze={analyze}
         analyzeBlocker={analyzeBlocker}
         analyzing={analysisJob.active}
-        providerStatus={<ProviderStatusLine provider={provider} />}
+        providerStatus={
+          <>
+            <ProviderStatusLine provider={provider} />
+            <UnityProjectLine />
+          </>
+        }
       />
 
       <ExtractedFramesPanel

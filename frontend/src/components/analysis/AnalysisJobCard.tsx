@@ -43,9 +43,16 @@ export default function AnalysisJobCard({ analysis, onRetry }: { analysis: Analy
           <Icon name="sparkles" size={18} className="text-primary-soft" /> {ai.title}
         </h2>
         {job && (
-          <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" title={ai.sourceTooltip}>
-            {ai.providerLine(job.provider_version ?? "?", job.model ?? ai.defaultModel)}
-          </Badge>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {job.unity_project && (
+              <Badge title={job.unity_project}>
+                <Icon name="composition" size={12} /> {t.unityProject.jobBadge(job.unity_project)}
+              </Badge>
+            )}
+            <Badge className="border-emerald-400/30 bg-emerald-400/10 text-emerald-200" title={ai.sourceTooltip}>
+              {ai.providerLine(job.provider_version ?? "?", job.model ?? ai.defaultModel)}
+            </Badge>
+          </div>
         )}
       </div>
 

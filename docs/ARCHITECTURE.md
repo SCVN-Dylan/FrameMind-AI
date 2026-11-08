@@ -30,7 +30,7 @@ framemind-ai/
 │   │   ├── main.py           Creates the FastAPI app, CORS, startup tasks
 │   │   ├── api/
 │   │   │   ├── router.py     Mounts every route module under /api
-│   │   │   └── routes/       health.py, videos.py, sessions.py, media.py, analysis.py, ai_provider.py
+│   │   │   └── routes/       health.py, videos.py, sessions.py, media.py, analysis.py, ai_provider.py, unity_project.py
 │   │   ├── core/config.py    Settings read from backend/.env
 │   │   ├── core/errors.py    AppError + one JSON error shape for the whole API
 │   │   ├── db/database.py    SQLite engine, sessions, Base for models
@@ -44,7 +44,8 @@ framemind-ai/
 │   │       ├── extraction.py Frame extraction runs, job limits, extracted media
 │   │       ├── video/        ffmpeg.py: FFprobe metadata, frame + sequence extraction
 │   │       ├── analysis.py   Analysis jobs: queue, frame selection, validation, storage
-│   │       ├── app_settings.py Local preferences (selected model) in SQLite
+│   │       ├── app_settings.py Local preferences (selected model, Unity project) in SQLite
+│   │       ├── unity_project.py Connected Unity project: validation, connect/disconnect, macOS folder dialog
 │   │       └── ai/           codex_cli.py (CodexCLIService), codex_account.py (login/logout/models), prompt.py
 │   ├── tests/                pytest tests
 │   └── requirements.txt
@@ -144,6 +145,25 @@ values stay English. `add_missing_columns()` in `db/database.py` adds such new c
   stores it on the job; `codex exec --model <slug>` uses the job's own value.
 - **Guard:** login, logout, cancel and model changes require a request from this computer and, if sent by a browser,
   the `FRONTEND_ORIGIN` origin (`require_local_request`). Login/logout are refused while an analysis is active.
+
+### Unity project (Settings → Unity project)
+
+- **Connect:** `PUT /api/unity-project {path}` (or `POST /api/unity-project/choose`, which opens the macOS folder dialog
+  with `osascript` and returns the path) → `services/unity_project.py` checks the folder (`Assets/` +
+  `ProjectSettings/ProjectVersion.txt`), reads the Unity version and the serialization mode, and stores the resolved
+  path in `app_settings` (`unity_project_path`). `DELETE` disconnects. Local only, refused while an analysis runs,
+  macOS only (`supported: false` elsewhere).
+- **Chosen folders:** `GET /api/unity-project/folders?parent=` lists sub-folders (top level = Assets, ProjectSettings,
+  Packages; dot folders and `name~` skipped) for the tree in Settings; `PUT /api/unity-project/folders {folders}` saves
+  the ticked ones (`unity_project_folders`, JSON). Each must resolve inside the project under one of those three
+  folders; a folder inside another chosen one is dropped. Connecting a project resets the choice to `[]`.
+- **Analyze:** with no folder chosen the job is videos-only. Otherwise `start_job` stores the path and folders on the job
+  (`analysis_jobs.unity_project_path` / `unity_project_folders`; `JobOut.unity_project` is the folder name). The worker
+  re-checks them, adds a project section to the prompt (`prompt.project_rules`) and calls
+  `codex_cli.run(..., project_dirs=<chosen folders>)`: only those folders are added read-only to the
+  permission profile, the shell tool stays on, the timeout is `CODEX_PROJECT_TIMEOUT_SECONDS`, and a sandbox start
+  failure fails the job (`codex_project_sandbox_failed`) instead of using Codex's built-in profile.
+- **No project:** prompt and command are exactly the visual-only ones.
 
 ### Standalone page (Milestone 09)
 

@@ -35,15 +35,15 @@ from app.schemas.analysis import (
     FeedbackOut,
     JobOut,
 )
-from app.services import extraction
+from app.services import extraction, unity_project
 from app.services.ai.codex_account import codex_account
 from app.services.ai.codex_cli import PROVIDER, CodexError, codex_cli
-from app.services.ai.prompt import PromptFrame, build_prompt
+from app.services.ai.prompt import ProjectContext, PromptFrame, build_prompt
 
 logger = logging.getLogger(__name__)
 
 ACTIVE = ("pending", "processing")
-MAX_ISSUES_PER_PAIR = 8
+MAX_ISSUES_PER_PAIR = 20  # same as the schema limit on AIAnalysisOutput.issues
 _create_lock = threading.Lock()
 _executor: Optional[ThreadPoolExecutor] = None
 _executor_lock = threading.Lock()
@@ -120,6 +120,7 @@ def job_out(job: AnalysisJob) -> JobOut:
         model=job.model,
         provider_version=job.provider_version,
         language=job.language if job.language in ("en", "vi", "ko") else "en",  # type: ignore[arg-type]
+        unity_project=Path(job.unity_project_path).name if job.unity_project_path else None,
         pair_ids=json.loads(job.pair_ids_json or "[]"),
         summary=job.summary,
         feedback_count=len(job.feedback),
@@ -226,6 +227,7 @@ def codex_app_error(exc: CodexError) -> AppError:
         "codex_timeout": 504,
         "codex_invalid_output": 502,
         "codex_failed": 502,
+        "codex_project_sandbox_failed": 502,
         "model_unsupported": 422,
         "codex_already_logged_in": 409,
     }.get(exc.code, 503)
@@ -256,6 +258,10 @@ def start_job(db: Session, session: AnalysisSession, request: AnalysisRunRequest
         model = codex_account.validate_model(codex_account.selected_model())
     except CodexError as exc:
         raise codex_app_error(exc) from exc
+    # The Unity project connected in Settings (None = videos only). Fails if it is connected but unreadable.
+    project = unity_project.connected()
+    if project is not None and not project.readable_dirs:
+        project = None  # connected, but no folder chosen (or all chosen folders are gone): videos only
 
     with _create_lock:
         if _cancelled.is_set():
@@ -273,6 +279,8 @@ def start_job(db: Session, session: AnalysisSession, request: AnalysisRunRequest
             model=model,  # stored per job: changing the model later never affects this job
             provider_version=probe.version,
             language=request.language,
+            unity_project_path=str(project.root) if project else None,  # stored per job, like the model
+            unity_project_folders=json.dumps([f for f in project.folders if f not in project.missing_folders]) if project else None,
             pair_ids_json=json.dumps(pair_ids),
         )
         db.add(job)
@@ -378,8 +386,30 @@ def normalize_issues(
     return kept, rejected
 
 
+def _job_project(job: AnalysisJob) -> Optional[unity_project.UnityProject]:
+    """The Unity project this job may read, re-checked now (it may have moved since the job was queued)."""
+    if not job.unity_project_path:
+        return None
+    if not unity_project.supported():
+        raise AppError(409, "unity_project_unsupported", "Reading a Unity project is only supported on macOS.")
+    folders = json.loads(job.unity_project_folders or "[]")
+    try:
+        project = unity_project.inspect(job.unity_project_path, folders)
+    except AppError as exc:
+        raise AppError(409, "unity_project_unavailable", f"The Unity project can't be read any more: {exc.message}") from exc
+    if not project.readable_dirs:
+        raise AppError(409, "unity_project_unavailable", "The chosen Unity project folders can't be read any more.")
+    return project
+
+
 def _analyse_pair(
-    db: Session, session: AnalysisSession, pair: MatchingPair, mode: str, model: Optional[str], language: str = "en"
+    db: Session,
+    session: AnalysisSession,
+    pair: MatchingPair,
+    mode: str,
+    model: Optional[str],
+    language: str = "en",
+    project: Optional[unity_project.UnityProject] = None,
 ) -> Tuple[AIAnalysisOutput, List[dict], int]:
     frames = _frames_for_pair(db, session, pair)
     workdir = Path(tempfile.mkdtemp(prefix="framemind-codex-")).resolve()
@@ -391,9 +421,20 @@ def _analyse_pair(
             images.append(target)
         prompt_frames = [PromptFrame(f.label, f.role, f.timestamp_ms) for f in frames]
         description = (pair.event_description or "").replace('"', "'").replace("\n", " ")[:200]
-        prompt = build_prompt(pair.id, mode, prompt_frames, description, language)
+        context = None
+        if project is not None:
+            context = ProjectContext(
+                name=project.name,
+                root=str(project.root),
+                readable_dirs=[str(d) for d in project.readable_dirs],
+                unity_version=project.unity_version,
+                text_serialization=project.text_serialization,
+            )
+        prompt = build_prompt(pair.id, mode, prompt_frames, description, language, project=context)
         _raise_if_cancelled()
-        output = codex_cli.run(prompt, images, workdir, model=model)
+        output = codex_cli.run(
+            prompt, images, workdir, model=model, project_dirs=project.readable_dirs if project else ()
+        )
     finally:
         shutil.rmtree(workdir, ignore_errors=True)
     issues, rejected = normalize_issues(output, pair, frames, mode)
@@ -418,6 +459,7 @@ def run_job(job_id: str) -> None:
             if session is None:
                 raise AppError(404, "session_not_found", "The session was deleted.")
             pairs = {p.id: p for p in session.pairs}
+            project = _job_project(job)
             summaries: List[str] = []
             stored: List[dict] = []
             rejected_total = 0
@@ -427,7 +469,9 @@ def run_job(job_id: str) -> None:
                 if pair is None:
                     raise AppError(404, "pair_not_found", "A pair was deleted while the analysis was running.")
                 _raise_if_cancelled()
-                output, issues, rejected = _analyse_pair(db, session, pair, job.analysis_mode, job.model, job.language)
+                output, issues, rejected = _analyse_pair(
+                    db, session, pair, job.analysis_mode, job.model, job.language, project
+                )
                 rejected_total += rejected
                 stored.extend(issues)
                 if output.summary.strip():

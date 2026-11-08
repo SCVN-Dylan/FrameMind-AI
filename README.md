@@ -145,6 +145,21 @@ with Pydantic, generates the feedback ids, checks the pair id, evidence frame la
   arguments; `OPENAI_API_KEY`/`CODEX_API_KEY` are removed from Codex's environment;
 - timeout with process-group kill, 1 concurrent Codex run by default, output size limits, tokens redacted from logs.
 
+**Unity project (optional, macOS):** Settings → Unity project → *Choose folder…* (or paste the path) connects a Unity
+project folder; *Disconnect* removes it. Then tick the folders the AI may read (e.g. `Assets/Scenes`,
+`Assets/Scripts/Camera`) and *Save folders*. Analyze lets Codex read only those folders, so its feedback can name real
+files, GameObjects, components and values (e.g. `Main Camera > Camera.field of view: 60 -> 50`). With no project, or
+no folder ticked, analysis is exactly the visual-only review above.
+
+- only the ticked folders (each inside `Assets/`, `ProjectSettings/` or `Packages/`) are added to the profile as
+  read-only; the rest of the project, `Library/`, `Temp/`, `.git/` and the rest of the computer stay denied, writes and
+  network stay blocked (checked with codex-cli 0.165.0); links leaving the project can't be chosen;
+- the shell tool is enabled for these runs only, so Codex can search the files (`rg`, `grep`, `cat`…) inside that sandbox;
+- such a run never falls back to Codex's built-in `:read-only` profile (it can read the whole disk): if the sandbox
+  can't start, the job fails with `codex_project_sandbox_failed`;
+- the files Codex reads are sent to OpenAI with the analysis; runs take longer (`CODEX_PROJECT_TIMEOUT_SECONDS`, 600 s);
+- the project is stored per job, so changing it never affects a running analysis. Clear All Data keeps the connection.
+
 If Codex is signed in with an API key instead of ChatGPT, Analyze is refused (so nothing is billed to an API account),
 unless you set `CODEX_ALLOW_API_KEY_AUTH=true`.
 
@@ -165,6 +180,9 @@ your own trusted machine. Keep this a personal local tool: do not expose the bac
 | Codex did not finish in time | Raise `CODEX_TIMEOUT_SECONDS`, or use fewer frames (`AI_MAX_FRAMES_PER_CLIP`) |
 | Exited with an error / usage limit | Read the message; you may have hit your plan's usage limit — wait for it to reset |
 | Not valid feedback JSON | Run it again; the answer did not match the schema and nothing was saved |
+| Not a Unity project | Choose the folder that contains `Assets/` and `ProjectSettings/` |
+| Connected Unity project can't be read | The folder moved or its drive is unmounted: reconnect or disconnect it in Settings |
+| Codex could not start its sandbox to read the Unity project | Disconnect the project to analyse the videos only, or update Codex |
 | Interrupted | The backend restarted during the run; run it again |
 
 ## Standalone page (`submission/index.html`)

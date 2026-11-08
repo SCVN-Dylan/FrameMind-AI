@@ -44,7 +44,11 @@ def init_db() -> None:
 
 # Columns added to existing tables after their first release: (table, column, SQL type + default).
 # create_all() only creates missing tables, so these are added with ALTER TABLE ... ADD COLUMN (never dropped).
-ADDED_COLUMNS = (("analysis_jobs", "language", "VARCHAR(5) NOT NULL DEFAULT 'en'"),)
+ADDED_COLUMNS = (
+    ("analysis_jobs", "language", "VARCHAR(5) NOT NULL DEFAULT 'en'"),
+    ("analysis_jobs", "unity_project_path", "TEXT"),
+    ("analysis_jobs", "unity_project_folders", "TEXT"),
+)
 
 
 def add_missing_columns(bind) -> None:

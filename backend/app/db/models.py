@@ -120,6 +120,10 @@ class AnalysisJob(Base):
     provider_version: Mapped[Optional[str]] = mapped_column(String(40), nullable=True)
     # Language the AI was asked to write in ("en" | "vi" | "ko"). Feedback is stored exactly as generated.
     language: Mapped[str] = mapped_column(String(5), default="en", server_default="en")
+    # Unity project folder Codex could read for this job (null = videos only). Stored per job, like the model.
+    unity_project_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # JSON list of the project-relative folders Codex could read for this job.
+    unity_project_folders: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     # JSON list of the matching pair ids analysed (kept even if a pair is deleted later).
     pair_ids_json: Mapped[str] = mapped_column(Text, default="[]")
     summary: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

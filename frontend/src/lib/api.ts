@@ -278,6 +278,8 @@ export type ApiJob = {
   provider_version: string | null;
   /** Language the feedback was generated in. */
   language: "en" | "vi" | "ko";
+  /** Name of the Unity project folder Codex could read for this job; null = videos only. */
+  unity_project: string | null;
   pair_ids: string[];
   summary: string | null;
   feedback_count: number;
@@ -400,6 +402,56 @@ export function listCodexModels(refresh = false, signal?: AbortSignal): Promise<
 /** null = Codex CLI default model. */
 export function selectCodexModel(model: string | null): Promise<ApiModels> {
   return request<ApiModels>("/api/ai/provider/model", json("PUT", { model }));
+}
+
+// ---------- Unity project (Settings → Unity project) ----------
+
+/** The Unity project Analyze may read. `connected` false = analysis uses the videos only. */
+export type ApiUnityProject = {
+  /** False where reading a project is not available yet (Windows). */
+  supported: boolean;
+  connected: boolean;
+  path: string | null;
+  name: string | null;
+  unity_version: string | null;
+  /** true = Force Text serialization, false = binary or mixed, null = unknown. */
+  text_serialization: boolean | null;
+  /** Project-relative folders Codex may read ("Assets/Scenes"). Empty = analysis uses the videos only. */
+  folders: string[];
+  /** Chosen folders that no longer exist (not readable). */
+  missing_folders: string[];
+  /** Set when a project is connected but its folder can't be read any more. */
+  error_code: string | null;
+  error: string | null;
+};
+
+export function getUnityProject(signal?: AbortSignal): Promise<ApiUnityProject> {
+  return request<ApiUnityProject>("/api/unity-project", json("GET", undefined, signal));
+}
+
+export function connectUnityProject(path: string): Promise<ApiUnityProject> {
+  return request<ApiUnityProject>("/api/unity-project", json("PUT", { path }));
+}
+
+/** Opens the macOS folder picker on this computer; `path` is null when it was cancelled. */
+export function chooseUnityProjectFolder(): Promise<{ path: string | null }> {
+  return request<{ path: string | null }>("/api/unity-project/choose", json("POST"));
+}
+
+export type ApiUnityFolder = { path: string; name: string; has_children: boolean };
+
+/** Sub-folders of `parent` (project-relative; "" = Assets, ProjectSettings, Packages). */
+export function listUnityProjectFolders(parent: string, signal?: AbortSignal): Promise<{ parent: string; folders: ApiUnityFolder[] }> {
+  return request(`/api/unity-project/folders?parent=${encodeURIComponent(parent)}`, json("GET", undefined, signal));
+}
+
+/** Replaces the folders Codex may read. [] = analysis uses the videos only. */
+export function setUnityProjectFolders(folders: string[]): Promise<ApiUnityProject> {
+  return request<ApiUnityProject>("/api/unity-project/folders", json("PUT", { folders }));
+}
+
+export function disconnectUnityProject(): Promise<ApiUnityProject> {
+  return request<ApiUnityProject>("/api/unity-project", json("DELETE"));
 }
 
 // ---------- Data management ----------

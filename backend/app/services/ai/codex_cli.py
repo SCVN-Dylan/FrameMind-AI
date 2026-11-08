@@ -11,6 +11,11 @@ Every run is locked down using only documented CLI options (verified against cod
   temp folder (read-only) and the minimal system paths Codex needs; no writes, no network, approvals "never",
 - shell / exec / image viewing / image generation / browser / computer-use / apps / plugins disabled with `--disable`,
 - the working directory is a fresh temp folder outside the project holding only copies of the frames to analyse.
+
+With a connected Unity project (services/unity_project.py) the profile also allows reading that project's Assets/,
+ProjectSettings/ and Packages/ folders, and the shell tool stays on so Codex can search them (rg, grep, cat…). It is
+still read-only and offline, everything else stays denied, and such a run never falls back to Codex's built-in
+`:read-only` profile (that one can read the whole disk).
 """
 
 import json
@@ -48,9 +53,10 @@ REQUIRED_EXEC_OPTIONS = (
     "--disable",
     "--config",
 )
+# Shell tools: off for a visual-only review, on (sandboxed, read-only) when Codex may read a Unity project.
+SHELL_FEATURES = ("shell_tool", "unified_exec")
 DISABLED_FEATURES = (
-    "shell_tool",
-    "unified_exec",
+    *SHELL_FEATURES,
     "view_image",
     "image_generation",
     "browser_use",
@@ -328,18 +334,23 @@ class CodexCLIService:
         answer: Path,
         model: Optional[str] = None,
         builtin_profile: bool = False,
+        project_dirs: Sequence[Path] = (),
     ) -> List[str]:
         """The exact argument list for one locked-down analysis run (no shell, no user text in arguments).
         `model` must already be validated against the Codex model catalog; None = the CLI default model.
         `builtin_profile` uses Codex's own `:read-only` profile instead of FrameMind's tighter one (the fallback
-        when a Codex version cannot start with it). Both are read-only, offline, and the shell tool stays off."""
+        when a Codex version cannot start with it). Both are read-only, offline, and the shell tool stays off.
+        `project_dirs`: Unity project folders Codex may also read; the shell tool is then on so it can search them.
+        Never combined with `builtin_profile`, which can read the whole disk."""
+        if project_dirs and builtin_profile:
+            raise CodexError("codex_bad_input", "A Unity project can only be read with FrameMind's own sandbox profile.")
         if builtin_profile:
             permissions = ["-c", 'default_permissions=":read-only"']
         else:
             # Read-only: the work folder, plus Codex's own install folders. Codex re-runs its executable as a
             # sandboxed helper (e.g. to load AGENTS.md); if that path is hidden, macOS refuses the exec
             # ("sandbox-exec: execvp() of '/opt/homebrew/bin/codex' failed: Operation not permitted").
-            readable = [workdir.resolve(), *_install_dirs(exe)]
+            readable = [workdir.resolve(), *(Path(d).resolve() for d in project_dirs), *_install_dirs(exe)]
             root = ", ".join(f"{json.dumps(str(path))}=\"read\"" for path in dict.fromkeys(readable))  # TOML keys
             permissions = [
                 "-c", f'default_permissions="{PROFILE}"',
@@ -364,6 +375,8 @@ class CodexCLIService:
             "-c", "project_doc_max_bytes=0",
         ]
         for feature in DISABLED_FEATURES:
+            if project_dirs and feature in SHELL_FEATURES:
+                continue
             cmd += ["--disable", feature]
         if model:
             cmd += ["--model", model]
@@ -374,8 +387,16 @@ class CodexCLIService:
         # positional prompt after it would be parsed as another image path.)
         return cmd
 
-    def run(self, prompt: str, images: Sequence[Path], workdir: Path, model: Optional[str] = None) -> AIAnalysisOutput:
-        """Runs one analysis. `images` must already be inside `workdir`. Raises CodexError on any failure."""
+    def run(
+        self,
+        prompt: str,
+        images: Sequence[Path],
+        workdir: Path,
+        model: Optional[str] = None,
+        project_dirs: Sequence[Path] = (),
+    ) -> AIAnalysisOutput:
+        """Runs one analysis. `images` must already be inside `workdir`. `project_dirs` = Unity project folders Codex
+        may also read (empty = visual review only). Raises CodexError on any failure."""
         settings = get_settings()
         probe = self.ensure_available()
         workdir = workdir.resolve()
@@ -388,12 +409,25 @@ class CodexCLIService:
         stdout_path, stderr_path = workdir / "stdout.log", workdir / "stderr.log"
         schema.write_text(json.dumps(OUTPUT_JSON_SCHEMA), encoding="utf-8")
         exe, version = probe.executable or "codex", probe.version or "unknown"
-        builtin = version in self._builtin_profile_versions
-        cmd = self.build_command(exe, workdir, images, schema, answer, model, builtin_profile=builtin)
-        proc = self._execute(cmd, workdir, prompt, stdout_path, stderr_path)
+        project_dirs = list(project_dirs)
+        builtin = version in self._builtin_profile_versions and not project_dirs
+        timeout = settings.codex_project_timeout_seconds if project_dirs else settings.codex_timeout_seconds
+        cmd = self.build_command(exe, workdir, images, schema, answer, model, builtin_profile=builtin, project_dirs=project_dirs)
+        proc = self._execute(cmd, workdir, prompt, stdout_path, stderr_path, timeout)
 
         limit = settings.codex_output_limit_bytes
-        if proc.returncode != 0 and not builtin:
+        if proc.returncode != 0 and project_dirs:
+            detail = (_tail(stderr_path, limit) or _tail(stdout_path, limit)).strip()
+            if _SETUP_FAILURE_RE.search(detail) and not _is_auth_failure(detail):
+                # No fallback here: Codex's built-in profile would expose the whole disk to the shell tool.
+                self.last_error = failure_summary(detail)
+                logger.warning("Codex %s could not start its sandbox to read the Unity project: %s", version, self.last_error)
+                raise CodexError(
+                    "codex_project_sandbox_failed",
+                    "This Codex version could not start its sandbox for reading the Unity project. Disconnect the "
+                    f"project to analyse the videos only. ({self.last_error})",
+                )
+        if proc.returncode != 0 and not builtin and not project_dirs:
             detail = (_tail(stderr_path, limit) or _tail(stdout_path, limit)).strip()
             if _SETUP_FAILURE_RE.search(detail) and not _is_auth_failure(detail):
                 logger.warning(
@@ -403,7 +437,7 @@ class CodexCLIService:
                 logger.warning("Codex output (last %d chars):\n%s", FAILURE_LOG_CHARS, detail[-FAILURE_LOG_CHARS:])
                 self._builtin_profile_versions.add(version)
                 cmd = self.build_command(exe, workdir, images, schema, answer, model, builtin_profile=True)
-                proc = self._execute(cmd, workdir, prompt, stdout_path, stderr_path)
+                proc = self._execute(cmd, workdir, prompt, stdout_path, stderr_path, timeout)
 
         if proc.returncode != 0:
             detail = (_tail(stderr_path, limit) or _tail(stdout_path, limit)).strip()
@@ -432,9 +466,9 @@ class CodexCLIService:
         return result
 
     def _execute(
-        self, cmd: List[str], workdir: Path, prompt: str, stdout_path: Path, stderr_path: Path
+        self, cmd: List[str], workdir: Path, prompt: str, stdout_path: Path, stderr_path: Path, timeout: float
     ) -> subprocess.Popen:
-        """Runs one `codex exec` to completion (or kills it on timeout / Clear All Data)."""
+        """Runs one `codex exec` to completion (or kills it after `timeout` seconds / on Clear All Data)."""
         settings = get_settings()
         slots = self._job_slots()
         if not slots.acquire(timeout=settings.codex_timeout_seconds):
@@ -458,11 +492,11 @@ class CodexCLIService:
                     if stopping:  # stop_all() ran between the check above and Popen
                         self._terminate(proc)
                         self._raise_if_stopping()
-                    proc.communicate(input=prompt.encode("utf-8"), timeout=settings.codex_timeout_seconds)
+                    proc.communicate(input=prompt.encode("utf-8"), timeout=timeout)
                 except subprocess.TimeoutExpired:
                     self._terminate(proc)
-                    self.last_error = f"timed out after {settings.codex_timeout_seconds:.0f}s"
-                    raise CodexError("codex_timeout", f"Codex did not finish within {settings.codex_timeout_seconds:.0f} seconds.")
+                    self.last_error = f"timed out after {timeout:.0f}s"
+                    raise CodexError("codex_timeout", f"Codex did not finish within {timeout:.0f} seconds.")
                 finally:
                     with self._procs_lock:
                         self._procs.discard(proc)

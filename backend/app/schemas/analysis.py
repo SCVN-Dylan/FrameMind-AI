@@ -100,6 +100,8 @@ class JobOut(BaseModel):
     model: Optional[str]
     provider_version: Optional[str]
     language: Language
+    # Name of the Unity project folder Codex could read for this job; null = videos only.
+    unity_project: Optional[str] = None
     pair_ids: List[str]
     summary: Optional[str]
     feedback_count: int

@@ -52,6 +52,8 @@ class Settings(BaseSettings):
     # Empty = the Codex CLI default model.
     codex_model: Optional[str] = None
     codex_timeout_seconds: float = 180
+    # Longer limit when a Unity project is connected: Codex also searches and reads project files.
+    codex_project_timeout_seconds: float = 600
     codex_max_concurrent_jobs: int = 1
     # Frames sent to Codex per clip (evenly picked from the extracted sequence).
     ai_max_frames_per_clip: int = 6
