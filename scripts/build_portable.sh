@@ -20,6 +20,7 @@ mkdir -p "$STAGE/submission" "$STAGE/backend" "$STAGE/scripts/windows" || die "c
 cp "$REPO/Start FrameMind.command" "$REPO/Stop FrameMind.command" "$STAGE/"
 cp "$REPO/Start FrameMind.bat" "$REPO/Stop FrameMind.bat" "$STAGE/"
 cp "$REPO/submission/index.html" "$STAGE/submission/"
+cp "$REPO/service-intro.html" "$STAGE/"  # product introduction page (self-contained)
 cp "$REPO/backend/requirements.txt" "$STAGE/backend/"
 rsync -a --exclude '__pycache__/' --exclude '*.pyc' --exclude '.DS_Store' "$REPO/backend/app" "$STAGE/backend/"
 for script in common.sh check_dependencies.sh setup.sh start_backend.sh stop_backend.sh; do

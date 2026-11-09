@@ -11,6 +11,8 @@ The same ZIP runs on macOS and Windows. On Windows, use **`Start FrameMind.bat`*
 5. Your default browser opens FrameMind AI. Keep the black window open while you use the app.
 6. For AI analysis, open **Settings → AI Provider → Login with ChatGPT**. You only need to do this once on each PC.
 
+`service-intro.html` in the same folder is a short product introduction (EN / VI / KO). Open it in any browser; it needs nothing installed.
+
 ### The first time Windows blocks the file
 
 Files from the internet may show **"Windows protected your PC"** (SmartScreen), because the launcher is a script and not a signed program. Click **More info → Run anyway**. You only have to do this once. The launcher never changes Windows security settings. It runs PowerShell with `-ExecutionPolicy Bypass` only for its own scripts, and only for that run.

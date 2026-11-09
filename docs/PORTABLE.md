@@ -13,6 +13,8 @@ On Windows, use `Start FrameMind.bat` and see `README-Windows.md`.
 5. Your default browser opens FrameMind AI. In Safari a short "Opening FrameMind AI…" tab appears and closes by itself. Keep the Terminal window open while you use the app.
 6. For AI analysis, open **Settings → AI Provider → Login with ChatGPT** (only needed once).
 
+`service-intro.html` in the same folder is a short product introduction (EN / VI / KO). Open it in any browser; it needs nothing installed.
+
 ### The first time macOS blocks the file
 
 Files that come from the internet or AirDrop are checked by Gatekeeper. Because the launcher is a script and not a signed app, macOS may say it *"cannot be opened"* or *"could not be verified"*.
