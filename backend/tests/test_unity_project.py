@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.services import unity_project
+from app.services import app_settings, unity_project
 from app.services.ai.codex_cli import CodexCLIService, CodexError
 from app.services.ai.prompt import ProjectContext, PromptFrame, build_prompt
 from tests.conftest import needs_ffmpeg
@@ -40,9 +40,13 @@ def mac(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def disconnected(client):  # the client starts the app, which creates the tables
-    unity_project.disconnect()
+    def clear():
+        unity_project.disconnect()
+        app_settings.put(unity_project.RECENT_KEY, None)
+
+    clear()
     yield
-    unity_project.disconnect()
+    clear()
 
 
 # ---------- Validation ----------
@@ -133,8 +137,64 @@ def test_choose_list_and_save_folders(client, mac, tmp_path):
     bad = client.put("/api/unity-project/folders", json={"folders": ["Library"]})
     assert bad.status_code == 422 and bad.json()["error"]["code"] == "unity_project_folder_invalid"
 
-    # Connecting again starts with nothing chosen.
-    assert client.put("/api/unity-project", json={"path": str(root)}).json()["folders"] == []
+    # Connecting it again (after another project) restores its folders.
+    assert client.put("/api/unity-project", json={"path": str(root)}).json()["folders"] == ["Assets/Scenes", "Assets/Scripts/Camera"]
+
+
+def test_switching_projects_remembers_each_ones_folders(client, mac, tmp_path):
+    game = make_project(tmp_path / "a", "Game")
+    other = make_project(tmp_path / "b", "Other")
+    client.put("/api/unity-project", json={"path": str(game)})
+    client.put("/api/unity-project/folders", json={"folders": ["Assets/Scenes"]})
+
+    data = client.put("/api/unity-project", json={"path": str(other)}).json()
+    assert data["name"] == "Other" and data["folders"] == []  # a new project starts with nothing readable
+    assert [(r["name"], r["folder_count"], r["available"]) for r in data["recent"]] == [("Other", 0, True), ("Game", 1, True)]
+
+    data = client.put("/api/unity-project", json={"path": str(game)}).json()
+    assert data["folders"] == ["Assets/Scenes"]
+    assert [r["name"] for r in data["recent"]] == ["Game", "Other"]
+
+    # Disconnecting keeps the list; a folder deleted meanwhile is dropped when reconnecting.
+    data = client.delete("/api/unity-project").json()
+    assert data["connected"] is False and [r["name"] for r in data["recent"]] == ["Game", "Other"]
+    (game / "Assets" / "Scenes").rmdir()
+    assert client.put("/api/unity-project", json={"path": str(game)}).json()["folders"] == []
+
+
+def test_project_connected_before_the_recent_list_is_kept_when_switching(client, mac, tmp_path):
+    old = make_project(tmp_path / "a", "Old")
+    new = make_project(tmp_path / "b", "New")
+    app_settings.put(unity_project.SETTING_KEY, str(old.resolve()))  # connected by an older FrameMind
+    app_settings.put(unity_project.FOLDERS_KEY, '["Assets/Scenes"]')
+    assert [r["name"] for r in client.get("/api/unity-project").json()["recent"]] == ["Old"]
+
+    data = client.put("/api/unity-project", json={"path": str(new)}).json()
+    assert [(r["name"], r["folder_count"]) for r in data["recent"]] == [("New", 0), ("Old", 1)]
+    assert client.put("/api/unity-project", json={"path": str(old)}).json()["folders"] == ["Assets/Scenes"]
+
+
+def test_forget_removes_from_recent_and_disconnects(client, mac, tmp_path):
+    game = make_project(tmp_path / "a", "Game")
+    other = make_project(tmp_path / "b", "Other")
+    client.put("/api/unity-project", json={"path": str(other)})
+    client.put("/api/unity-project", json={"path": str(game)})
+
+    data = client.delete("/api/unity-project/recent", params={"path": str(other.resolve())}).json()
+    assert data["connected"] is True and [r["name"] for r in data["recent"]] == ["Game"]
+    data = client.delete("/api/unity-project/recent", params={"path": str(game.resolve())}).json()
+    assert data["connected"] is False and data["recent"] == []
+    assert game.exists() and other.exists()
+
+
+def test_recent_marks_missing_projects(client, mac, tmp_path):
+    import shutil
+
+    game = make_project(tmp_path / "a", "Game")
+    client.put("/api/unity-project", json={"path": str(game)})
+    client.delete("/api/unity-project")
+    shutil.rmtree(game)
+    assert client.get("/api/unity-project").json()["recent"][0]["available"] is False
 
 
 def test_folders_need_a_connected_project(client, mac):

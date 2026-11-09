@@ -404,7 +404,7 @@ export function selectCodexModel(model: string | null): Promise<ApiModels> {
   return request<ApiModels>("/api/ai/provider/model", json("PUT", { model }));
 }
 
-// ---------- Unity project (Settings → Unity project) ----------
+// ---------- Unity project (chosen next to Analyze) ----------
 
 /** The Unity project Analyze may read. `connected` false = analysis uses the videos only. */
 export type ApiUnityProject = {
@@ -423,6 +423,17 @@ export type ApiUnityProject = {
   /** Set when a project is connected but its folder can't be read any more. */
   error_code: string | null;
   error: string | null;
+  /** Projects used before, most recent first (the connected one included). */
+  recent: ApiRecentUnityProject[];
+};
+
+/** A project used before; connecting it again restores its chosen folders. */
+export type ApiRecentUnityProject = {
+  path: string;
+  name: string;
+  folder_count: number;
+  /** False when its folder can't be found (moved, deleted, drive not mounted). */
+  available: boolean;
 };
 
 export function getUnityProject(signal?: AbortSignal): Promise<ApiUnityProject> {
@@ -452,6 +463,11 @@ export function setUnityProjectFolders(folders: string[]): Promise<ApiUnityProje
 
 export function disconnectUnityProject(): Promise<ApiUnityProject> {
   return request<ApiUnityProject>("/api/unity-project", json("DELETE"));
+}
+
+/** Removes a project from the recent list (disconnects it if it is the connected one). */
+export function forgetUnityProject(path: string): Promise<ApiUnityProject> {
+  return request<ApiUnityProject>(`/api/unity-project/recent?path=${encodeURIComponent(path)}`, json("DELETE"));
 }
 
 // ---------- Data management ----------

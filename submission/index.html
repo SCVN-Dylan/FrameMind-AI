@@ -657,24 +657,14 @@ const en = {
     },
     unityProject: {
       title: "Unity project",
-      description: "Optional. Connect your Unity project folder so the AI can also read its scenes, prefabs, materials and scripts and suggest concrete changes.",
-      notConnected: "Not connected. Analysis uses the videos only.",
-      connectedBadge: "Connected",
-      problemBadge: "Can't be read",
       choose: "Choose folder…",
-      change: "Use another folder",
       choosing: "Waiting for the folder dialog…",
       dialogHint: "The folder dialog may open behind the browser window.",
       pathLabel: "Or paste the folder path",
       pathPlaceholder: "/Users/you/Projects/MyGame",
       connect: "Connect",
       connecting: "Connecting…",
-      checking: "Checking the connected project…",
-      disconnect: "Disconnect",
-      disconnecting: "Disconnecting…",
-      disconnectConfirm: "Disconnect this Unity project? Analysis will use the videos only. Nothing in the project is changed.",
       connectedNotice: (name) => `Connected to ${name}. Now tick the folders the AI may read.`,
-      disconnectedNotice: "Disconnected. Analysis uses the videos only.",
       foldersTitle: "Folders the AI may read",
       foldersHint: "Tick only what matters for this review, e.g. Assets/Scenes or your camera and VFX folders. Ticking a folder includes everything inside it.",
       foldersNone: "No folder chosen yet: analysis uses the videos only.",
@@ -687,20 +677,20 @@ const en = {
       noSubfolders: "No sub-folders",
       includedByParent: "Included by the folder above",
       missingFolders: (list) => `No longer found (ignored): ${list}`,
-      analyzeNoFolders: (name) => `Unity project: ${name} · no folder chosen, videos only`,
-      folder: "Folder",
-      version: "Unity version",
-      serialization: "Asset serialization",
-      forceText: "Force Text (readable)",
-      binary: "Binary or mixed: some scenes and prefabs can't be read",
-      unknown: "Unknown",
       reads: "The AI can open only the folders you tick, read-only. The rest of the project, Library/, Temp/ and the rest of this Mac stay blocked, and nothing is ever changed.",
       privacy: "Project files the AI reads are sent to OpenAI with the analysis, like the frames.",
       slower: "Analyses take longer while a project is connected (up to 10 minutes per pair).",
-      unsupported: "Reading a Unity project is only available on macOS for now.",
-      analyzeOn: (name, count) => `Unity project: ${name} · the AI reads ${count} folder${count === 1 ? "" : "s"}`,
+      videosOnlyOption: "None: videos only",
+      addProject: "Add a project…",
+      notFound: "not found",
+      folderCountShort: (count) => `${count} folder${count === 1 ? "" : "s"}`,
+      readsCount: (count) => `The AI reads ${count} folder${count === 1 ? "" : "s"} of this project.`,
+      binaryShort: "binary assets: some scenes can't be read",
+      foldersButton: "Folders",
+      forget: "Remove from list",
+      forgetConfirm: (name) => `Remove ${name} from the list? Its chosen folders are forgotten. Nothing in the project is changed.`,
+      cancel: "Cancel",
       analyzeOff: "Videos only",
-      connectLink: "Connect a Unity project",
       jobBadge: (name) => `Read Unity project: ${name}`,
     },
     dataManagement: {
@@ -747,7 +737,7 @@ const en = {
       unity_project_folder_invalid: "That folder can't be chosen. Pick folders inside Assets, ProjectSettings or Packages.",
       unity_project_not_connected: "Connect a Unity project first.",
       unity_project_invalid: "That folder was not found or is not a Unity project. Choose the folder that contains Assets/ and ProjectSettings/.",
-      unity_project_unavailable: "The connected Unity project can't be read any more. Reconnect or disconnect it in Settings.",
+      unity_project_unavailable: "The connected Unity project can't be read any more. Pick another project, or “None”, next to Analyze.",
       unity_project_unsupported: "Reading a Unity project is only available on macOS for now.",
       unity_project_dialog_open: "A folder dialog is already open. Look for it on the screen.",
       unity_project_dialog_failed: "The folder dialog could not be opened. Paste the folder path instead.",
@@ -1243,24 +1233,14 @@ const vi = {
     },
     unityProject: {
       title: "Unity project",
-      description: "Tuỳ chọn. Kết nối thư mục Unity project để AI đọc thêm scene, prefab, material và script, từ đó gợi ý chỉnh sửa cụ thể.",
-      notConnected: "Chưa kết nối. Phân tích chỉ dùng video.",
-      connectedBadge: "Đã kết nối",
-      problemBadge: "Không đọc được",
       choose: "Chọn thư mục…",
-      change: "Đổi sang thư mục khác",
       choosing: "Đang chờ hộp thoại chọn thư mục…",
       dialogHint: "Hộp thoại chọn thư mục có thể mở phía sau cửa sổ trình duyệt.",
       pathLabel: "Hoặc dán đường dẫn thư mục",
       pathPlaceholder: "/Users/ban/Projects/MyGame",
       connect: "Kết nối",
       connecting: "Đang kết nối…",
-      checking: "Đang kiểm tra project đã kết nối…",
-      disconnect: "Ngắt kết nối",
-      disconnecting: "Đang ngắt kết nối…",
-      disconnectConfirm: "Ngắt kết nối Unity project này? Phân tích sẽ chỉ dùng video. Không có gì trong project bị thay đổi.",
       connectedNotice: (name) => `Đã kết nối ${name}. Giờ hãy tick các thư mục AI được đọc.`,
-      disconnectedNotice: "Đã ngắt kết nối. Phân tích chỉ dùng video.",
       foldersTitle: "Thư mục AI được đọc",
       foldersHint: "Chỉ tick những gì cần cho lần review này, ví dụ Assets/Scenes hoặc thư mục camera, VFX. Tick một thư mục là gồm mọi thứ bên trong nó.",
       foldersNone: "Chưa chọn thư mục nào: phân tích chỉ dùng video.",
@@ -1273,20 +1253,20 @@ const vi = {
       noSubfolders: "Không có thư mục con",
       includedByParent: "Đã gồm trong thư mục cha",
       missingFolders: (list) => `Không còn tìm thấy (bỏ qua): ${list}`,
-      analyzeNoFolders: (name) => `Unity project: ${name} · chưa chọn thư mục, chỉ dùng video`,
-      folder: "Thư mục",
-      version: "Phiên bản Unity",
-      serialization: "Asset serialization",
-      forceText: "Force Text (đọc được)",
-      binary: "Binary hoặc Mixed: một số scene và prefab không đọc được",
-      unknown: "Không rõ",
       reads: "AI chỉ mở được các thư mục bạn tick, ở chế độ chỉ đọc. Phần còn lại của project, Library/, Temp/ và phần còn lại của máy Mac đều bị chặn, và không file nào bị thay đổi.",
       privacy: "Các file trong project mà AI đọc sẽ được gửi lên OpenAI cùng lượt phân tích, giống như các frame.",
       slower: "Khi đã kết nối project, mỗi lượt phân tích sẽ lâu hơn (tối đa 10 phút mỗi cặp).",
-      unsupported: "Hiện chỉ hỗ trợ đọc Unity project trên macOS.",
-      analyzeOn: (name, count) => `Unity project: ${name} · AI đọc ${count} thư mục`,
+      videosOnlyOption: "Không dùng: chỉ video",
+      addProject: "Thêm project…",
+      notFound: "không tìm thấy",
+      folderCountShort: (count) => `${count} thư mục`,
+      readsCount: (count) => `AI đọc ${count} thư mục của project này.`,
+      binaryShort: "asset dạng binary: một số scene không đọc được",
+      foldersButton: "Thư mục",
+      forget: "Xoá khỏi danh sách",
+      forgetConfirm: (name) => `Xoá ${name} khỏi danh sách? Các thư mục đã chọn sẽ bị quên. Không có gì trong project bị thay đổi.`,
+      cancel: "Huỷ",
       analyzeOff: "Chỉ dùng video",
-      connectLink: "Kết nối Unity project",
       jobBadge: (name) => `Đã đọc Unity project: ${name}`,
     },
     dataManagement: {
@@ -1333,7 +1313,7 @@ const vi = {
       unity_project_folder_invalid: "Không chọn được thư mục này. Hãy chọn thư mục nằm trong Assets, ProjectSettings hoặc Packages.",
       unity_project_not_connected: "Hãy kết nối Unity project trước.",
       unity_project_invalid: "Không tìm thấy thư mục hoặc đây không phải Unity project. Hãy chọn thư mục chứa Assets/ và ProjectSettings/.",
-      unity_project_unavailable: "Không đọc được Unity project đã kết nối nữa. Hãy kết nối lại hoặc ngắt kết nối trong Settings.",
+      unity_project_unavailable: "Không đọc được Unity project đã kết nối nữa. Hãy chọn project khác hoặc “Không dùng” ở cạnh nút Analyze.",
       unity_project_unsupported: "Hiện chỉ hỗ trợ đọc Unity project trên macOS.",
       unity_project_dialog_open: "Hộp thoại chọn thư mục đang mở. Hãy tìm nó trên màn hình.",
       unity_project_dialog_failed: "Không mở được hộp thoại chọn thư mục. Hãy dán đường dẫn thư mục.",
@@ -1829,24 +1809,14 @@ const ko = {
     },
     unityProject: {
       title: "Unity 프로젝트",
-      description: "선택 사항. Unity 프로젝트 폴더를 연결하면 AI가 씬, 프리팹, 머티리얼, 스크립트도 읽고 구체적인 수정 방법을 제안합니다.",
-      notConnected: "연결되지 않음. 분석에는 영상만 사용합니다.",
-      connectedBadge: "연결됨",
-      problemBadge: "읽을 수 없음",
       choose: "폴더 선택…",
-      change: "다른 폴더 사용",
       choosing: "폴더 선택 창을 기다리는 중…",
       dialogHint: "폴더 선택 창이 브라우저 창 뒤에 열릴 수 있습니다.",
       pathLabel: "또는 폴더 경로 붙여넣기",
       pathPlaceholder: "/Users/you/Projects/MyGame",
       connect: "연결",
       connecting: "연결 중…",
-      checking: "연결된 프로젝트 확인 중…",
-      disconnect: "연결 해제",
-      disconnecting: "연결 해제 중…",
-      disconnectConfirm: "이 Unity 프로젝트의 연결을 해제할까요? 분석에는 영상만 사용합니다. 프로젝트는 변경되지 않습니다.",
       connectedNotice: (name) => `${name}에 연결했습니다. 이제 AI가 읽을 폴더를 선택하세요.`,
-      disconnectedNotice: "연결을 해제했습니다. 분석에는 영상만 사용합니다.",
       foldersTitle: "AI가 읽을 수 있는 폴더",
       foldersHint: "이번 리뷰에 필요한 것만 선택하세요(예: Assets/Scenes, 카메라·VFX 폴더). 폴더를 선택하면 그 안의 모든 항목이 포함됩니다.",
       foldersNone: "아직 선택한 폴더가 없습니다: 분석에는 영상만 사용합니다.",
@@ -1859,20 +1829,20 @@ const ko = {
       noSubfolders: "하위 폴더 없음",
       includedByParent: "상위 폴더에 포함됨",
       missingFolders: (list) => `더 이상 찾을 수 없음(무시됨): ${list}`,
-      analyzeNoFolders: (name) => `Unity 프로젝트: ${name} · 선택한 폴더 없음, 영상만 사용`,
-      folder: "폴더",
-      version: "Unity 버전",
-      serialization: "에셋 직렬화",
-      forceText: "Force Text (읽기 가능)",
-      binary: "Binary 또는 Mixed: 일부 씬과 프리팹은 읽을 수 없음",
-      unknown: "알 수 없음",
       reads: "AI는 선택한 폴더만 읽기 전용으로 열 수 있습니다. 프로젝트의 나머지, Library/, Temp/와 이 Mac의 나머지는 차단되며 어떤 파일도 변경되지 않습니다.",
       privacy: "AI가 읽은 프로젝트 파일은 프레임과 마찬가지로 분석과 함께 OpenAI로 전송됩니다.",
       slower: "프로젝트가 연결되어 있으면 분석이 더 오래 걸립니다(페어당 최대 10분).",
-      unsupported: "Unity 프로젝트 읽기는 현재 macOS에서만 지원됩니다.",
-      analyzeOn: (name, count) => `Unity 프로젝트: ${name} · AI가 폴더 ${count}개를 읽습니다`,
+      videosOnlyOption: "사용 안 함: 영상만",
+      addProject: "프로젝트 추가…",
+      notFound: "찾을 수 없음",
+      folderCountShort: (count) => `폴더 ${count}개`,
+      readsCount: (count) => `AI가 이 프로젝트의 폴더 ${count}개를 읽습니다.`,
+      binaryShort: "Binary 에셋: 일부 씬은 읽을 수 없음",
+      foldersButton: "폴더",
+      forget: "목록에서 제거",
+      forgetConfirm: (name) => `${name}을(를) 목록에서 제거할까요? 선택한 폴더도 잊습니다. 프로젝트는 변경되지 않습니다.`,
+      cancel: "취소",
       analyzeOff: "영상만 사용",
-      connectLink: "Unity 프로젝트 연결",
       jobBadge: (name) => `읽은 Unity 프로젝트: ${name}`,
     },
     dataManagement: {
@@ -1919,7 +1889,7 @@ const ko = {
       unity_project_folder_invalid: "이 폴더는 선택할 수 없습니다. Assets, ProjectSettings, Packages 안의 폴더를 선택하세요.",
       unity_project_not_connected: "먼저 Unity 프로젝트를 연결하세요.",
       unity_project_invalid: "폴더를 찾을 수 없거나 Unity 프로젝트가 아닙니다. Assets/와 ProjectSettings/가 있는 폴더를 선택하세요.",
-      unity_project_unavailable: "연결된 Unity 프로젝트를 더 이상 읽을 수 없습니다. 설정에서 다시 연결하거나 연결을 해제하세요.",
+      unity_project_unavailable: "연결된 Unity 프로젝트를 더 이상 읽을 수 없습니다. 분석 버튼 옆에서 다른 프로젝트나 “사용 안 함”을 선택하세요.",
       unity_project_unsupported: "Unity 프로젝트 읽기는 현재 macOS에서만 지원됩니다.",
       unity_project_dialog_open: "폴더 선택 창이 이미 열려 있습니다. 화면에서 찾아보세요.",
       unity_project_dialog_failed: "폴더 선택 창을 열 수 없습니다. 폴더 경로를 붙여넣으세요.",
@@ -3153,7 +3123,6 @@ async function startAnalysis(mode, pairIds) {
 async function loadProvider() {
   if (!online()) { ws.provider = null; return; }
   try { ws.provider = await api("/api/ai/provider/status"); } catch { ws.provider = null; }
-  try { ws.unityProject = await api("/api/unity-project"); } catch { ws.unityProject = null; }
   if (route.page === "analysis") renderWS("settings-analyze");
 }
 function toFeedbackItem(f) {
@@ -3698,23 +3667,16 @@ function renderAnalyzeBlock() {
       ? h("p", { class: "row xs ok", style: { justifyContent: "center", margin: 0 } }, h("span", { class: "dot", style: { background: "var(--ok)" } }), `${AI.providerReady(prov.version || "?")} · ${prov.model || AI.defaultModel}`)
       : h("p", { class: "row wrap xs warn", role: "alert", style: { justifyContent: "center", margin: 0 } }, icon("alert", 13), `${AI.providerUnavailable} ${prov.last_error || ""}`, h("a", { href: "#/settings", class: "link-btn", style: { color: "inherit" } }, st().openSettings));
   }
-  const U = T.unityProject, up = ws.unityProject;
-  let projectLine = null;
-  if (online() && up && up.supported) {
-    projectLine = up.connected && up.error_code
-      ? h("p", { class: "row wrap xs warn", role: "alert", style: { justifyContent: "center", margin: 0 } }, icon("alert", 13), apiErrorText({ code: up.error_code, message: up.error }), h("a", { href: "#/settings", class: "link-btn", style: { color: "inherit" } }, st().openSettings))
-      : up.connected
-        ? h("p", { class: "row xs muted", style: { justifyContent: "center", margin: 0 }, title: up.path }, icon("composition", 13, "soft"),
-            readableCount(up) ? U.analyzeOn(up.name, readableCount(up)) : U.analyzeNoFolders(up.name))
-        : h("p", { class: "row xs muted", style: { justifyContent: "center", margin: 0 } }, `${U.analyzeOff} · `, h("a", { href: "#/settings", class: "link-btn", style: { color: "inherit" } }, U.connectLink));
-  }
+  // Which Unity project (if any) this analysis reads: chosen right here, since each analysis can be for another project.
+  if (online() && !uproj.status && !uproj.loading) loadUnityProject();
+  els.unityProject = h("div", { style: { marginBottom: "4px" } }, renderUnityProjectSection());
   return h("div", { class: "col gap6 hr", style: { paddingTop: "20px" } },
+    els.unityProject,
     h("button", { type: "button", class: "btn btn-primary btn-lg", disabled: !r.ok || blocker !== null || busy, title: AI.usageNote,
       onclick: () => { if (!r.ok || r.target.mode === "full_video" || analyzeBlocker()) return; ws.selectedFeedbackId = null; startAnalysis(r.target.mode, [r.target.pair.id]); } },
       busy ? spinner("white") : icon("sparkles", 18), A.buttons[ws.mode], h("span", { class: "tag" }, AI.source)),
     issueText || blocker ? h("p", { class: "xs warn center", role: "alert", style: { margin: 0 } }, issueText || blocker) : h("p", { class: "xs muted center", style: { margin: 0 } }, AI.usageNote),
-    providerLine,
-    projectLine);
+    providerLine);
 }
 
 // ---------- Extracted frames: backend (saved pairs) or browser Canvas (offline / local files) ----------
@@ -4281,8 +4243,8 @@ function renderBackendSection() {
     msg,
     store.ok ? null : h("p", { class: "notice n-warn", style: { margin: 0 } }, S.storageOff));
 }
-// ---------- Unity project: connect / disconnect (Analyze reads it when connected) ----------
-const uproj = { status: null, busy: null, notice: null, path: "", loading: false, draft: null, tree: newFolderTree() };
+// ---------- Unity project: chosen next to Analyze (projects used before are remembered with their folders) ----------
+const uproj = { status: null, busy: null, notice: null, path: "", loading: false, draft: null, tree: newFolderTree(), adding: false, foldersOpen: false };
 function newFolderTree() { return { children: {}, loading: new Set(), open: new Set(["Assets"]) }; }
 const readableCount = (p) => (p && p.folders ? p.folders.filter((f) => !(p.missing_folders || []).includes(f)).length : 0);
 /** The folders ticked in the tree: the unsaved choice, or what the backend has. */
@@ -4351,75 +4313,91 @@ function renderFolderPicker(s) {
 }
 async function loadUnityProject() {
   if (!online()) { uproj.status = null; renderUnityProjectSafe(); return; }
-  uproj.loading = true; renderUnityProjectSafe();
+  uproj.loading = true;
   try { uproj.status = await api("/api/unity-project"); ws.unityProject = uproj.status; }
   catch (e) { uproj.notice = { tone: "error", text: apiErrorText(toApiError(e)) }; }
   uproj.loading = false; renderUnityProjectSafe();
 }
-function renderUnityProjectSafe() { if (route.page === "settings" && els.unityProject) els.unityProject.replaceChildren(renderUnityProjectSection()); }
+function renderUnityProjectSafe() {
+  if (route.page === "analysis" && els.unityProject && els.unityProject.isConnected) els.unityProject.replaceChildren(renderUnityProjectSection());
+}
 async function unityProjectAction(kind, fn) {
   uproj.busy = kind; uproj.notice = null; renderUnityProjectSafe();
   try { await fn(); } catch (e) { uproj.notice = { tone: "error", text: apiErrorText(toApiError(e)) }; }
   uproj.busy = null; ws.unityProject = uproj.status; renderUnityProjectSafe();
 }
+/** Connects a project. One used before comes back with its folders; a new one opens its folder list to tick some. */
 async function connectUnityProject(path) {
   uproj.status = await api("/api/unity-project", { method: "PUT", body: { path } });
-  uproj.path = ""; uproj.draft = null; uproj.tree = newFolderTree();
-  uproj.notice = { tone: "ok", text: t().unityProject.connectedNotice(uproj.status.name) };
+  uproj.path = ""; uproj.draft = null; uproj.tree = newFolderTree(); uproj.adding = false;
+  uproj.foldersOpen = uproj.status.folders.length === 0;
+  if (!uproj.status.folders.length) uproj.notice = { tone: "ok", text: t().unityProject.connectedNotice(uproj.status.name) };
 }
+const UPROJ_NONE = "", UPROJ_ADD = "__add__";
 function renderUnityProjectSection() {
   const U = t().unityProject;
-  if (!online()) return h("p", { class: "notice n-err", style: { margin: 0 } }, icon("alert", 15), st().backend[backend.status]);
   const s = uproj.status;
-  if (!s) return h("p", { class: "row muted", style: { margin: 0 } }, spinner(), U.checking);
-  if (!s.supported) return h("p", { class: "notice n-warn", style: { margin: 0 } }, icon("info", 15), U.unsupported);
-  const busy = !!uproj.busy;
+  if (!online() || !s || !s.supported) return uproj.notice && uproj.notice.tone === "error" ? h("p", { class: "xs err", role: "alert", style: { margin: 0 } }, uproj.notice.text) : h("span");
+  const locked = !!uproj.busy || jobActive();
   const notice = uproj.notice ? h("p", { class: `xs ${uproj.notice.tone === "error" ? "err" : "ok"}`, role: uproj.notice.tone === "error" ? "alert" : "status", style: { margin: 0 } }, uproj.notice.text) : null;
-  const pathInput = h("input", { class: "input mono", id: "unity-project-path", value: uproj.path, placeholder: U.pathPlaceholder, autocomplete: "off", spellcheck: "false", disabled: busy,
-    oninput: (e) => { uproj.path = e.target.value; },
-    onkeydown: (e) => { if (e.key === "Enter" && uproj.path.trim()) unityProjectAction("connect", () => connectUnityProject(uproj.path.trim())); } });
-  const picker = h("div", { class: "col gap12" },
-    h("div", { class: "row wrap" },
-      button(uproj.busy === "choose" ? U.choosing : U.choose, { variant: s.connected ? "secondary" : "primary", iconName: "plusCircle", busy: uproj.busy === "choose", disabled: busy,
-        onClick: () => unityProjectAction("choose", async () => {
-          const chosen = await api("/api/unity-project/choose", { method: "POST" });
-          if (chosen.path) await connectUnityProject(chosen.path);
-        }) }),
-      uproj.busy === "choose" ? h("span", { class: "xs muted" }, U.dialogHint) : null),
-    h("label", { class: "field", for: "unity-project-path" }, U.pathLabel,
-      h("div", { class: "row", style: { gap: "8px" } }, pathInput,
-        button(uproj.busy === "connect" ? U.connecting : U.connect, { iconName: "link", busy: uproj.busy === "connect", disabled: busy,
-          onClick: () => { const value = (pathInput.value || "").trim(); uproj.path = value; if (value) unityProjectAction("connect", () => connectUnityProject(value)); } }))));
-  const info = h("ul", { class: "clean col gap6 xs muted", style: { margin: 0 } },
-    h("li", { class: "row", style: { alignItems: "flex-start" } }, icon("check", 13), U.reads),
-    h("li", { class: "row", style: { alignItems: "flex-start" } }, icon("info", 13), U.privacy),
-    h("li", { class: "row", style: { alignItems: "flex-start" } }, icon("clock", 13), U.slower));
-  if (!s.connected) {
-    return h("div", { class: "col gap16" },
-      h("p", { class: "row sm muted", style: { margin: 0 } }, h("span", { class: "dot", style: { background: "var(--muted)" } }), U.notConnected),
-      picker, notice, info);
+  const value = uproj.adding ? UPROJ_ADD : s.connected ? s.path : UPROJ_NONE;
+  const select = h("select", { class: "input", id: "unity-project-select", disabled: locked, style: { flex: "1 1 12rem", minWidth: 0, height: "34px" },
+    onchange: (e) => {
+      const v = e.target.value;
+      if (v === UPROJ_ADD) { uproj.adding = true; uproj.notice = null; renderUnityProjectSafe(); return; }
+      uproj.adding = false;
+      if (v === UPROJ_NONE) {
+        if (s.connected) unityProjectAction("switch", async () => { uproj.status = await api("/api/unity-project", { method: "DELETE" }); uproj.draft = null; uproj.foldersOpen = false; });
+        else renderUnityProjectSafe();
+        return;
+      }
+      if (v !== s.path) unityProjectAction("switch", () => connectUnityProject(v));
+    } },
+    h("option", { value: UPROJ_NONE }, U.videosOnlyOption),
+    (s.recent || []).map((r) => h("option", { value: r.path, title: r.path }, r.available ? `${r.name} · ${U.folderCountShort(r.folder_count)}` : `${r.name} · ${U.notFound}`)),
+    h("option", { value: UPROJ_ADD }, U.addProject));
+  select.value = value;
+  const parts = [h("div", { class: "row wrap", style: { gap: "8px" } },
+    h("label", { class: "row xs b", for: "unity-project-select", style: { gap: "6px" } }, icon("composition", 14, "soft"), U.title),
+    select, uproj.busy ? spinner() : null)];
+
+  if (s.connected && !uproj.adding) {
+    const readable = readableCount(s);
+    const warn = !!s.error_code || readable === 0;
+    const status = s.error_code ? apiErrorText({ code: s.error_code, message: s.error }) : readable ? U.readsCount(readable) : U.foldersNone;
+    parts.push(h("div", { class: "row wrap between", style: { gap: "8px" } },
+      h("p", { class: `xs ${warn ? "warn" : "muted"}`, role: warn ? "alert" : null, title: s.path, style: { margin: 0 } }, status,
+        !s.error_code && s.text_serialization === false ? ` · ${U.binaryShort}` : ""),
+      h("div", { class: "row", style: { gap: "6px" } },
+        s.error_code ? null : button(U.foldersButton, { size: "sm", variant: "secondary", iconName: uproj.foldersOpen ? "chevronDown" : "chevronRight", disabled: jobActive(),
+          onClick: () => { uproj.foldersOpen = !uproj.foldersOpen; renderUnityProjectSafe(); } }),
+        button("", { size: "sm", variant: "secondary", iconName: "trash", disabled: locked, title: U.forget,
+          onClick: () => { if (!confirm(U.forgetConfirm(s.name))) return; const target = s.path;
+            unityProjectAction("forget", async () => { uproj.status = await api(`/api/unity-project/recent?path=${encodeURIComponent(target)}`, { method: "DELETE" }); uproj.draft = null; uproj.foldersOpen = false; }); } }))));
+    if (uproj.foldersOpen && !s.error_code) parts.push(h("div", { class: "hr", style: { paddingTop: "12px" } }, renderFolderPicker(s)));
   }
-  const serialization = s.text_serialization === true ? U.forceText : s.text_serialization === false ? U.binary : U.unknown;
-  return h("div", { class: "col gap16" },
-    h("div", { class: "box", style: { padding: "16px" } },
-      h("div", { class: "row wrap between", style: { marginBottom: "12px" } },
-        h("h3", { class: "row sm b", style: { margin: 0, minWidth: 0, overflowWrap: "anywhere" } }, icon("composition", 15, "soft"), s.name || "—"),
-        s.error_code ? badge([icon("alert", 12), ` ${U.problemBadge}`], "b-err") : badge([icon("check", 12), ` ${U.connectedBadge}`], "b-ok")),
-      h("dl", { class: "kv" },
-        h("dt", null, U.folder), h("dd", { class: "mono xs", style: { overflowWrap: "anywhere" } }, s.path || "—"),
-        s.error_code ? null : [h("dt", null, U.version), h("dd", null, s.unity_version || U.unknown)],
-        s.error_code ? null : [h("dt", null, U.serialization), h("dd", { class: s.text_serialization === false ? "warn" : null }, serialization)]),
-      s.error_code ? h("p", { class: "xs warn", role: "alert", style: { margin: "12px 0 0" } }, apiErrorText({ code: s.error_code, message: s.error })) : null,
-      h("div", { class: "row wrap", style: { marginTop: "16px" } },
-        button(uproj.busy === "disconnect" ? U.disconnecting : U.disconnect, { variant: "danger", iconName: "x", busy: uproj.busy === "disconnect", disabled: busy,
-          onClick: () => { if (!confirm(U.disconnectConfirm)) return; unityProjectAction("disconnect", async () => {
-            uproj.status = await api("/api/unity-project", { method: "DELETE" });
-            uproj.draft = null; uproj.tree = newFolderTree();
-            uproj.notice = { tone: "ok", text: U.disconnectedNotice };
-          }); } }))),
-    s.error_code ? null : renderFolderPicker(s),
-    h("details", { class: "xs muted" }, h("summary", { class: "fg" }, U.change), h("div", { style: { marginTop: "12px" } }, picker)),
-    notice, info);
+
+  if (uproj.adding) {
+    const pathInput = h("input", { class: "input mono", id: "unity-project-path", value: uproj.path, placeholder: U.pathPlaceholder, autocomplete: "off", spellcheck: "false", disabled: locked,
+      oninput: (e) => { uproj.path = e.target.value; },
+      onkeydown: (e) => { if (e.key === "Enter" && uproj.path.trim()) unityProjectAction("connect", () => connectUnityProject(uproj.path.trim())); } });
+    parts.push(h("div", { class: "col gap12 hr", style: { paddingTop: "12px" } },
+      h("div", { class: "row wrap" },
+        button(uproj.busy === "choose" ? U.choosing : U.choose, { size: "sm", variant: "primary", iconName: "plusCircle", busy: uproj.busy === "choose", disabled: locked,
+          onClick: () => unityProjectAction("choose", async () => {
+            const chosen = await api("/api/unity-project/choose", { method: "POST" });
+            if (chosen.path) await connectUnityProject(chosen.path);
+          }) }),
+        button(U.cancel, { size: "sm", variant: "secondary", disabled: !!uproj.busy, onClick: () => { uproj.adding = false; renderUnityProjectSafe(); } }),
+        uproj.busy === "choose" ? h("span", { class: "xs muted" }, U.dialogHint) : null),
+      h("label", { class: "field", for: "unity-project-path" }, U.pathLabel,
+        h("div", { class: "row", style: { gap: "8px" } }, pathInput,
+          button(uproj.busy === "connect" ? U.connecting : U.connect, { size: "sm", iconName: "link", busy: uproj.busy === "connect", disabled: locked,
+            onClick: () => { const v = (pathInput.value || "").trim(); uproj.path = v; if (v) unityProjectAction("connect", () => connectUnityProject(v)); } }))),
+      h("ul", { class: "clean col gap6 xs muted", style: { margin: 0 } }, h("li", null, U.reads), h("li", null, U.privacy), h("li", null, U.slower))));
+  }
+  if (notice) parts.push(notice);
+  return h("div", { class: "box col", style: { padding: "12px 14px", gap: "10px" } }, parts);
 }
 
 // ---------- Data Management: Clear All Data ----------
@@ -4520,9 +4498,7 @@ function renderDataSection() {
 function renderSettings() {
   const T = t(), SE = T.settings;
   if (online() && !prov.status && !prov.loading) loadProviderDetails(false);
-  if (online() && !uproj.status && !uproj.loading) loadUnityProject();
   els.provider = h("div", null, renderCodexSection());
-  els.unityProject = h("div", null, renderUnityProjectSection());
   return [
     pageHeader(SE.title, SE.description),
     h("div", { "data-slot": "backend-banner" }, backendBanner()),
@@ -4530,7 +4506,6 @@ function renderSettings() {
       card(cardHeader(st().connTitle, st().connDesc), h("div", { class: "card-b" }, renderBackendSection())),
       card(cardHeader(T.ai.settingsTitle, T.ai.settingsDescription), h("div", { class: "card-b" }, els.provider)),
       card(cardHeader(SE.languageTitle, SE.languageDescription), h("div", { class: "card-b", style: { maxWidth: "20rem" } }, languageSwitcher(false)))),
-    card(cardHeader(T.unityProject.title, T.unityProject.description), h("div", { class: "card-b" }, els.unityProject)),
     card(cardHeader(T.dataManagement.title, T.dataManagement.description), h("div", { class: "card-b" }, renderDataSection())),
     card(cardHeader(SE.aboutTitle, `FrameMind AI · ${st().file}`), h("p", { class: "sm muted card-b", style: { margin: 0 } }, st().aboutText)),
   ];

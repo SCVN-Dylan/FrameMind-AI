@@ -3,6 +3,16 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 
 
+class RecentUnityProjectOut(BaseModel):
+    """A project used before; connecting it again restores its chosen folders."""
+
+    path: str
+    name: str
+    folder_count: int
+    # False when its folder can't be found (moved, deleted, drive not mounted).
+    available: bool
+
+
 class UnityProjectOut(BaseModel):
     """The Unity project Analyze may read. `connected` false = analysis uses the videos only."""
 
@@ -21,6 +31,8 @@ class UnityProjectOut(BaseModel):
     # Set when a project is connected but its folder can't be read any more.
     error_code: Optional[str]
     error: Optional[str]
+    # Projects used before, most recent first (the connected one included).
+    recent: List[RecentUnityProjectOut] = []
 
 
 class UnityProjectConnect(BaseModel):

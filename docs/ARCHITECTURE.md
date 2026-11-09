@@ -45,7 +45,7 @@ framemind-ai/
 │   │       ├── video/        ffmpeg.py: FFprobe metadata, frame + sequence extraction
 │   │       ├── analysis.py   Analysis jobs: queue, frame selection, validation, storage
 │   │       ├── app_settings.py Local preferences (selected model, Unity project) in SQLite
-│   │       ├── unity_project.py Connected Unity project: validation, connect/disconnect, macOS folder dialog
+│   │       ├── unity_project.py Connected Unity project: validation, connect/disconnect, recent list, macOS folder dialog
 │   │       └── ai/           codex_cli.py (CodexCLIService), codex_account.py (login/logout/models), prompt.py
 │   ├── tests/                pytest tests
 │   └── requirements.txt
@@ -146,17 +146,21 @@ values stay English. `add_missing_columns()` in `db/database.py` adds such new c
 - **Guard:** login, logout, cancel and model changes require a request from this computer and, if sent by a browser,
   the `FRONTEND_ORIGIN` origin (`require_local_request`). Login/logout are refused while an analysis is active.
 
-### Unity project (Settings → Unity project)
+### Unity project (chosen above the Analyze button)
 
 - **Connect:** `PUT /api/unity-project {path}` (or `POST /api/unity-project/choose`, which opens the macOS folder dialog
   with `osascript` and returns the path) → `services/unity_project.py` checks the folder (`Assets/` +
   `ProjectSettings/ProjectVersion.txt`), reads the Unity version and the serialization mode, and stores the resolved
-  path in `app_settings` (`unity_project_path`). `DELETE` disconnects. Local only, refused while an analysis runs,
-  macOS only (`supported: false` elsewhere).
+  path in `app_settings` (`unity_project_path`). `DELETE` disconnects (videos only). Local only, refused while an
+  analysis runs, macOS only (`supported: false` elsewhere).
+- **Recent projects:** each analysis can be for another project, so `unity_project_recent` (JSON, max 10, most recent
+  first) remembers every project used with its ticked folders. Connecting one again restores its folders (dropping any
+  that no longer exist); a new one starts with `[]`. `GET` returns them as `recent` (`name`, `folder_count`,
+  `available`); `DELETE /api/unity-project/recent?path=` removes one (and disconnects it if it is the connected one).
 - **Chosen folders:** `GET /api/unity-project/folders?parent=` lists sub-folders (top level = Assets, ProjectSettings,
-  Packages; dot folders and `name~` skipped) for the tree in Settings; `PUT /api/unity-project/folders {folders}` saves
+  Packages; dot folders and `name~` skipped) for the folder tree; `PUT /api/unity-project/folders {folders}` saves
   the ticked ones (`unity_project_folders`, JSON). Each must resolve inside the project under one of those three
-  folders; a folder inside another chosen one is dropped. Connecting a project resets the choice to `[]`.
+  folders; a folder inside another chosen one is dropped.
 - **Analyze:** with no folder chosen the job is videos-only. Otherwise `start_job` stores the path and folders on the job
   (`analysis_jobs.unity_project_path` / `unity_project_folders`; `JobOut.unity_project` is the folder name). The worker
   re-checks them, adds a project section to the prompt (`prompt.project_rules`) and calls

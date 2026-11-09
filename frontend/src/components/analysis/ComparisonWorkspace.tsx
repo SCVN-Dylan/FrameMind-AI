@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import Icon from "@/components/ui/Icon";
-import { UnityProjectLine } from "@/components/settings/UnityProject";
 import VideoPanel, { type PlayerHighlight } from "@/components/video/VideoPanel";
 import { useMatchedMoments } from "@/hooks/useMatchedMoments";
 import { useAnalysisJob } from "@/hooks/useAnalysisJob";
@@ -28,6 +27,7 @@ import AnalysisSettingsPanel from "./AnalysisSettingsPanel";
 import AnalysisTimeline from "./AnalysisTimeline";
 import ExtractedFramesPanel from "./ExtractedFramesPanel";
 import FeedbackPanel from "./FeedbackPanel";
+import UnityProjectPanel from "./UnityProjectPanel";
 import { ProviderStatusLine, useProviderStatus } from "./ProviderStatus";
 
 const NO_SOURCES: Record<VideoSlot, VideoSource | null> = { reference: null, current: null };
@@ -437,12 +437,8 @@ export default function ComparisonWorkspace() {
         onAnalyze={analyze}
         analyzeBlocker={analyzeBlocker}
         analyzing={analysisJob.active}
-        providerStatus={
-          <>
-            <ProviderStatusLine provider={provider} />
-            <UnityProjectLine />
-          </>
-        }
+        projectPanel={<UnityProjectPanel disabled={analysisJob.active} />}
+        providerStatus={<ProviderStatusLine provider={provider} />}
       />
 
       <ExtractedFramesPanel

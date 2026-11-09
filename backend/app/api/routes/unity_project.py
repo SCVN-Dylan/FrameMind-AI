@@ -1,4 +1,4 @@
-"""Connected Unity project (Settings → Unity project): status, connect, choose folder, disconnect.
+"""Connected Unity project (chosen next to Analyze): status, connect, choose folder, folders, disconnect, recent list.
 
 Changing it only accepts requests from this computer and the FrameMind frontend, and is refused while an analysis
 runs (that analysis keeps the project it started with).
@@ -11,6 +11,7 @@ from app.core.errors import AppError, require_local_request
 from app.db.database import get_db
 from app.schemas.unity_project import (
     ChosenFolderOut,
+    RecentUnityProjectOut,
     UnityFolderListOut,
     UnityFolderOut,
     UnityFoldersSelect,
@@ -34,7 +35,12 @@ def _out(project: unity_project.UnityProject) -> UnityProjectOut:
         missing_folders=project.missing_folders,
         error_code=None,
         error=None,
+        recent=_recent(),
     )
+
+
+def _recent():
+    return [RecentUnityProjectOut(**item) for item in unity_project.recent()]
 
 
 def _status() -> UnityProjectOut:
@@ -51,11 +57,12 @@ def _status() -> UnityProjectOut:
             text_serialization=None,
             error_code=exc.code,
             error=exc.message,
+            recent=_recent(),
         )
     if project is None:
         return UnityProjectOut(
             supported=unity_project.supported(), connected=False, path=None, name=None, unity_version=None,
-            text_serialization=None, error_code=None, error=None,
+            text_serialization=None, error_code=None, error=None, recent=_recent(),
         )
     return _out(project)
 
@@ -126,4 +133,17 @@ def set_folders(data: UnityFoldersSelect, db: Session = Depends(get_db)) -> Unit
 def disconnect_project(db: Session = Depends(get_db)) -> UnityProjectOut:
     _no_active_analysis(db)
     unity_project.disconnect()
+    return _status()
+
+
+@router.delete(
+    "/recent",
+    response_model=UnityProjectOut,
+    summary="Remove a project from the recent list",
+    description="Disconnects it too if it is the connected project. Nothing in the project folder is touched.",
+    dependencies=[Depends(require_local_request)],
+)
+def forget_project(path: str = Query(..., min_length=1, max_length=1024), db: Session = Depends(get_db)) -> UnityProjectOut:
+    _no_active_analysis(db)
+    unity_project.forget(path)
     return _status()

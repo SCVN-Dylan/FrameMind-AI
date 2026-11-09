@@ -46,6 +46,8 @@ type AnalysisSettingsPanelProps = {
   analyzing: boolean;
   /** Codex CLI status line shown under the button. */
   providerStatus: ReactNode;
+  /** Which Unity project (if any) Analyze reads; shown right above the button. */
+  projectPanel?: ReactNode;
 };
 
 /**
@@ -174,6 +176,7 @@ export default function AnalysisSettingsPanel(props: AnalysisSettingsPanelProps)
 
         {/* Analyze: runs the local Codex CLI on the selected pair */}
         <div className="flex flex-col gap-2 border-t border-border/60 pt-5">
+          {props.projectPanel && <div className="mb-1">{props.projectPanel}</div>}
           <Button
             variant="primary"
             className="h-12 w-full text-base"

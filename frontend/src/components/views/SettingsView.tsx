@@ -3,7 +3,6 @@
 import { ProviderStatusDetails } from "@/components/analysis/ProviderStatus";
 import BackendStatus from "@/components/BackendStatus";
 import DataManagement from "@/components/settings/DataManagement";
-import UnityProjectSettings from "@/components/settings/UnityProject";
 import LanguageSwitcher from "@/components/layout/LanguageSwitcher";
 import PageHeader from "@/components/layout/PageHeader";
 import { Badge } from "@/components/ui/Badge";
@@ -39,13 +38,6 @@ export default function SettingsView() {
           <CardHeader title={s.languageTitle} description={s.languageDescription} />
           <div className="max-w-xs px-5 pb-5">
             <LanguageSwitcher showLabel={false} />
-          </div>
-        </Card>
-
-        <Card className="xl:col-span-2">
-          <CardHeader title={t.unityProject.title} description={t.unityProject.description} />
-          <div className="px-5 pb-5">
-            <UnityProjectSettings />
           </div>
         </Card>
 

@@ -145,9 +145,11 @@ with Pydantic, generates the feedback ids, checks the pair id, evidence frame la
   arguments; `OPENAI_API_KEY`/`CODEX_API_KEY` are removed from Codex's environment;
 - timeout with process-group kill, 1 concurrent Codex run by default, output size limits, tokens redacted from logs.
 
-**Unity project (optional, macOS):** Settings → Unity project → *Choose folder…* (or paste the path) connects a Unity
-project folder; *Disconnect* removes it. Then tick the folders the AI may read (e.g. `Assets/Scenes`,
-`Assets/Scripts/Camera`) and *Save folders*. Analyze lets Codex read only those folders, so its feedback can name real
+**Unity project (optional, macOS):** right above the Analyze button, the *Unity project* list picks which project this
+analysis reads: *None: videos only*, a project used before, or *Add a project…* (*Choose folder…* or paste the path).
+Then open *Folders*, tick the folders the AI may read (e.g. `Assets/Scenes`, `Assets/Scripts/Camera`) and *Save
+folders*. Each project keeps its own ticked folders, so switching back to one restores them; the bin button removes a
+project from the list. Analyze lets Codex read only those folders, so its feedback can name real
 files, GameObjects, components and values (e.g. `Main Camera > Camera.field of view: 60 -> 50`). With no project, or
 no folder ticked, analysis is exactly the visual-only review above.
 
@@ -181,8 +183,8 @@ your own trusted machine. Keep this a personal local tool: do not expose the bac
 | Exited with an error / usage limit | Read the message; you may have hit your plan's usage limit — wait for it to reset |
 | Not valid feedback JSON | Run it again; the answer did not match the schema and nothing was saved |
 | Not a Unity project | Choose the folder that contains `Assets/` and `ProjectSettings/` |
-| Connected Unity project can't be read | The folder moved or its drive is unmounted: reconnect or disconnect it in Settings |
-| Codex could not start its sandbox to read the Unity project | Disconnect the project to analyse the videos only, or update Codex |
+| Connected Unity project can't be read | The folder moved or its drive is unmounted: pick another project, or *None*, above Analyze |
+| Codex could not start its sandbox to read the Unity project | Pick *None: videos only* above Analyze, or update Codex |
 | Interrupted | The backend restarted during the run; run it again |
 
 ## Standalone page (`submission/index.html`)
