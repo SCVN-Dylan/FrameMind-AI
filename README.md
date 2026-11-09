@@ -119,7 +119,7 @@ re-checked against the catalog: if this account can't use it any more, Analyze a
 **Run an analysis:** in New Analysis, upload both videos, add a Single Frame or Short Clip pair, wait for
 "Saved", select the pair and click **Analyze Selected Frames / Clips**. The AI Analysis card shows the job running
 (elapsed time, no fake percentage); feedback appears in the timeline and Feedback panel. Clicking a feedback item
-seeks each video to its own timestamp. Results are saved and come back after a refresh or a backend restart.
+seeks each video to its own timestamp. Each pair reports up to 20 issues, most severe first. Results are saved and come back after a refresh or a backend restart.
 Full Video stays "Future".
 
 **Feedback language:** Analyze sends the current UI language (EN / VI / KO). Codex is told to write the summary and
@@ -294,6 +294,11 @@ Interactive docs with every request/response shape: http://localhost:8000/docs. 
 | POST | `/api/ai/provider/logout` | `codex logout`, confirmed with `codex login status` (local only) |
 | GET | `/api/ai/provider/models[?refresh=true]` | Models from `codex debug models` (+ source and selected model) |
 | PUT | `/api/ai/provider/model` | Save the analysis model (`{"model": slug or null}`) (local only) |
+| GET | `/api/unity-project` | Chosen Unity project (version, serialization, ticked folders) and the recent projects list |
+| PUT · DELETE | `/api/unity-project` | Choose a project (`{"path"}`, restores its folders if used before) · back to videos only (local only) |
+| POST | `/api/unity-project/choose` | Open the macOS folder dialog, return the chosen path (local only) |
+| GET · PUT | `/api/unity-project/folders` | Sub-folders for the tree (`?parent=`) · save the folders the AI may read (`{"folders"}`, local only) |
+| DELETE | `/api/unity-project/recent?path=` | Remove a project from the recent list (local only) |
 | DELETE | `/api/data/all?confirm=DELETE` | Clear All Data: cancels analyses, deletes all user records and files, verifies (local only) |
 
 "Local only" endpoints accept requests only from this computer and, from a browser, only from `FRONTEND_ORIGIN`.
@@ -312,7 +317,9 @@ Replacing a session's video removes its extracted frames and the pairs that no l
    then **Extract frames**: an ordered frame sequence per video (8 fps, max 40 frames per clip by default;
    see `CLIP_SAMPLE_FPS` / `CLIP_MAX_FRAMES`). Click a thumbnail to seek that video to it.
 4. **Full Video:** UI only. No extraction or analysis yet.
-5. Refresh the page: videos, pairs, mode and extracted frames come back. Saved sessions are listed in
+5. Optional: right above **Analyze**, pick a **Unity project** (or *Add a project…*), click *Folders*, tick the
+   folders the AI may read and *Save folders* (see "Unity project" above). *None: videos only* is the default.
+6. Refresh the page: videos, pairs, mode and extracted frames come back. Saved sessions are listed in
    **Analysis History** (open or delete them there).
 
 Then click **Analyze** (see "AI analysis with Codex CLI" above).
@@ -339,6 +346,7 @@ Secrets live only in `backend/.env` (git-ignored). Never put API keys in fronten
 | `backend/.env`        | `CODEX_CLI_PATH`      | `codex` on PATH, or an absolute path     |
 | `backend/.env`        | `CODEX_MODEL`         | Initial model until one is chosen in Settings (empty = CLI default) |
 | `backend/.env`        | `CODEX_TIMEOUT_SECONDS`, `CODEX_MAX_CONCURRENT_JOBS` | Per-pair timeout (180 s), parallel Codex runs (1) |
+| `backend/.env`        | `CODEX_PROJECT_TIMEOUT_SECONDS` | Per-pair timeout when a Unity project is read (600 s) |
 | `backend/.env`        | `AI_MAX_FRAMES_PER_CLIP`, `AI_MAX_PAIRS_PER_JOB` | Frames sent per clip (6), pairs per job (5) |
 | `backend/.env`        | `OPENAI_API_KEY`      | Not used by the Codex CLI provider       |
 | `backend/.env`        | `OPENAI_MODEL`        | Vision model name                        |

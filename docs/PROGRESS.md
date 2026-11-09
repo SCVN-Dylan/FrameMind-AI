@@ -1,6 +1,6 @@
 # Progress
 
-_Last updated: 2026-10-28_
+_Last updated: 2026-11-09_
 
 ## Current milestone
 
@@ -248,6 +248,31 @@ _Last updated: 2026-10-28_
 - [x] Same `FrameMind-Portable.zip` for macOS and Windows (`README-Windows.md`); build checks CRLF
 - [ ] Not yet run on a real Windows PC (no Windows machine or PowerShell here): the scripts are unexecuted
 
+### More issues per pair (2026-11-08)
+
+- [x] Up to 20 issues per pair (was 6–8): `MAX_ISSUES_PER_PAIR = 20`, same as the output schema limit; the prompt asks
+      for every meaningful difference, most to least severe, small polish differences included
+
+### Unity project (2026-11-08 → 2026-11-09, macOS)
+
+- [x] Choose a Unity project right above the Analyze button: *None: videos only*, a recent project, or *Add a
+      project…* (macOS folder dialog through `osascript`, or a pasted path). Checks `Assets/` +
+      `ProjectSettings/ProjectVersion.txt`, reads the Unity version and the serialization mode
+- [x] Folder tree: tick the folders the AI may read (inside `Assets/`, `ProjectSettings/`, `Packages/`; no `..`, hidden
+      folders or links leaving the project). Nothing ticked = videos only, exactly as before
+- [x] Up to 10 recent projects remembered with their ticked folders (`unity_project_recent`); switching back restores
+      them; the bin button removes one. Nothing in a project is ever changed
+- [x] Codex: only the ticked folders are added read-only to the permission profile; shell tool on for project runs
+      only; writes, network, `Library/` and the rest of the disk stay blocked (checked with real codex-cli 0.165.0);
+      a project run never falls back to Codex's built-in read-only profile (`codex_project_sandbox_failed`);
+      timeout `CODEX_PROJECT_TIMEOUT_SECONDS` = 600
+- [x] Each job stores its project and folders (`analysis_jobs.unity_project_path` / `unity_project_folders`); the job
+      card shows "Read Unity project: …"; feedback names file, GameObject, component, field and current → suggested value
+- [x] API `/api/unity-project` (status, connect, choose, folders, disconnect, recent); local only, refused while an
+      analysis runs. Standalone page and Next.js both updated, EN/VI/KO
+- [x] `tests/test_unity_project.py` (35). Full backend suite: 161 pass. Real end-to-end run on a test project cited
+      `Assets/Scenes/Game.unity … Main Camera … field of view`
+
 ## Pending
 
 Plan: [ROADMAP.md](ROADMAP.md) — 6/8 milestones done (01–06).
@@ -256,6 +281,8 @@ Plan: [ROADMAP.md](ROADMAP.md) — 6/8 milestones done (01–06).
 - [ ] Try `FrameMind-Portable.zip` on a second Mac (fresh install path, Gatekeeper prompt)
 - [ ] Try `Start FrameMind.bat` on a real Windows 10/11 PC (winget installs, SmartScreen, Codex analysis)
 - [ ] 08 — QA, Optimization & Hackathon Demo
+- [ ] Unity project: try the macOS folder dialog (`osascript`) for real (only faked in tests so far)
+- [ ] "Connect to doc": let an analysis also read design documents (discussed, not started)
 
 ## Known issues
 
@@ -283,6 +310,8 @@ Plan: [ROADMAP.md](ROADMAP.md) — 6/8 milestones done (01–06).
   constant-rate videos (H.264 MP4, VP9 WebM).
 - Whether a file plays in the browser depends on its codec: H.264/VP8/VP9/AV1 work; HEVC/ProRes .mov often don't
   in Chrome (FFmpeg can still extract frames from them).
+- Unity project reading is macOS only (hidden on Windows). Scenes and prefabs saved as binary can't be read; the AI
+  reads files only, so values changed at runtime are not visible. Project files the AI reads are sent to OpenAI.
 - `frontend/package-lock.json` was regenerated on 2026-10-28 after corrupted entries (Next 16.4.3, React 19.3.0).
 
 ## Next task

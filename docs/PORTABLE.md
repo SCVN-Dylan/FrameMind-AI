@@ -53,7 +53,17 @@ The first launch needs internet and takes a few minutes. Later launches reuse ev
 - **New Analysis:** choose the two videos, then match moments:
   - *Single Frame:* the same moment at a different time in each video.
   - *Short Clip:* Start/End in each video, durations may differ, at most 10 seconds each.
-  - Then click **Analyze**. Feedback is written in the language selected in the app (EN / VI / KO), and clicking a feedback card seeks both videos.
+  - Then click **Analyze**. Feedback is written in the language selected in the app (EN / VI / KO), and clicking a feedback card seeks both videos. Each pair gets up to 20 issues, most severe first.
+- **Unity project (optional):** right above **Analyze**, the *Unity project* list chooses what the AI may also read:
+  - *None: videos only* (the default), a project you used before, or *Add a project…* (*Choose folder…* or paste the
+    path of the folder that contains `Assets/` and `ProjectSettings/`).
+  - Click *Folders*, tick only what matters for this review (e.g. `Assets/Scenes`, your camera or VFX folder), then
+    *Save folders*. **Nothing ticked = the videos only.**
+  - Each project remembers its own ticked folders, so you can switch between projects; the bin button removes one
+    from the list. The AI reads the ticked folders only, read-only: the rest of the project, `Library/` and the rest
+    of your Mac stay blocked, and nothing is ever changed. The files it reads are sent to OpenAI with the analysis.
+  - Feedback then names the file, GameObject, component and value to change. An analysis with a project takes longer
+    (up to 10 minutes per pair). Scenes and prefabs are readable only with *Force Text* asset serialization.
 - **History:** reopens saved sessions with their feedback.
 - **Full Video** analysis is not available yet (marked *Future*).
 
@@ -73,7 +83,7 @@ Sign-in is stored by Codex CLI on this Mac (in `~/.codex`). It is never copied f
 
 ```
 ~/Library/Application Support/FrameMind AI/
-├── framemind.db                  sessions, matched pairs, analyses, feedback, settings
+├── framemind.db                  sessions, matched pairs, analyses, feedback, settings (AI model, Unity projects)
 ├── videos/                       uploaded videos
 ├── frames/                       extracted frames
 ├── standalone_pairing_code.txt   the page's pairing code (private)
@@ -88,7 +98,7 @@ Moving, replacing or deleting the app folder does not touch this data. Deleting 
 
 To start over without touching anything else, use **Settings → Data Management → Clear All Data** (type `DELETE` to
 confirm). It deletes the videos, frames, sessions, analyses and feedback above and keeps `framemind.db` (empty), your
-selected AI model, the pairing code, the language, `runtime/`, `logs/` and your ChatGPT sign-in. It cannot be undone.
+selected AI model, the chosen Unity project and its list, the pairing code, the language, `runtime/`, `logs/` and your ChatGPT sign-in. It cannot be undone.
 
 To use another port than 8000, create `launcher.conf` there with a line such as `PORT=8765`. If the port is busy, the launcher uses the next free one.
 
@@ -120,6 +130,9 @@ Pages opened from disk send `Origin: null`, and so do sandboxed frames on any we
 | Codex shows **Not signed in** | Settings → AI Provider → Login with ChatGPT. |
 | Codex **not installed** | Start FrameMind again and click **Yes** to download its Codex CLI. |
 | *Codex exited with an error* | Read the line shown in the app, or `logs/backend.log` (sign-in expired, usage limit, network). Sandbox start-up problems with a new Codex are retried automatically. |
+| *The connected Unity project can't be read any more* | The folder moved or its drive is unmounted: pick another project, or *None: videos only*, above Analyze. |
+| *Codex could not start its sandbox to read the Unity project* | Pick *None: videos only* to analyse the videos, or start FrameMind again to update Codex. |
+| The Unity project list is missing | Reading a Unity project is available on macOS only. |
 | Python environment errors | Delete `~/Library/Application Support/FrameMind AI/runtime` and start again (your data is kept). |
 
 To check the tools without starting anything, run `scripts/check_dependencies.sh` in Terminal.

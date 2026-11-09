@@ -1,6 +1,6 @@
 # FrameMind AI → AI Unity Development & QA Assistant
 
-Ghi chú phân tích và hướng triển khai. **Chưa có code nào được viết cho phần này.**
+Ghi chú phân tích và hướng triển khai. **Chưa có code nào được viết cho các tính năng bên dưới.** Riêng phần đọc thư mục Unity project (gần với bước 3a) đã có trong Video Analysis từ 2026-11-09, xem mục 3.
 Ngày ghi: 2026-11-06.
 
 ---
@@ -33,15 +33,19 @@ Mở rộng FrameMind AI từ "so sánh video gameplay" thành trợ lý giúp:
 
 ## 3. Hiện trạng kỹ thuật cần lưu ý trước khi làm
 
-- **Giao diện chính là `submission/index.html`**: một file HTML/JS thuần khoảng 4.200 dòng, mở bằng `file://`, chạy trong bản Portable.
+- **Giao diện chính là `submission/index.html`**: một file HTML/JS thuần khoảng 4.500 dòng, mở bằng `file://`, chạy trong bản Portable.
   Thêm cả một Development Workspace vào file này sẽ khiến nó khó bảo trì.
   → **Việc chuẩn bị nên làm trước:** tách trang thành nhiều file JS/CSS trong `submission/` (vẫn chạy offline, vẫn không cần CDN). Cần sửa CSP (`script-src`) cho phép file cục bộ.
-- **Bản Next.js trong `frontend/`** đang bị bỏ lại phía sau (các tính năng gần đây chỉ làm ở trang standalone).
+- **Bản Next.js trong `frontend/`** đang bị bỏ lại phía sau (nhiều tính năng gần đây chỉ làm ở trang standalone; riêng Unity project thì làm cả hai).
   → Cần quyết định: **ngừng cập nhật Next.js** hay giữ song song. Khuyến nghị: chỉ phát triển trang standalone.
 - **Backend FastAPI + SQLite**: thêm bảng bằng `create_all` + `ADDED_COLUMNS` (chỉ thêm, không xóa). Phù hợp để mở rộng.
-- **Codex CLI** hiện chạy chế độ **chỉ đọc, không mạng, tắt shell**, chỉ nhận ảnh + prompt và trả JSON theo schema.
+- **Codex CLI** mặc định chạy chế độ **chỉ đọc, không mạng, tắt shell**, chỉ nhận ảnh + prompt và trả JSON theo schema.
   - Feature 01 dùng được cơ chế này gần như nguyên vẹn (gửi văn bản thay vì ảnh).
-  - Feature 03–04 cần Codex **đọc file trong Unity project** → phải mở quyền đọc thư mục project (vẫn read-only, vẫn không mạng). Đây là thay đổi bảo mật cần cân nhắc riêng.
+  - Feature 03–04 cần Codex **đọc file trong Unity project**. **Phần này đã làm (2026-11-09) cho Video Analysis:**
+    - Chọn project ngay trên nút Analyze (`services/unity_project.py`, API `/api/unity-project`), nhớ tối đa 10 project gần đây kèm thư mục đã tick.
+    - Người dùng tick thư mục trong `Assets/`, `ProjectSettings/`, `Packages/`; chỉ các thư mục đó được thêm vào permission profile của Codex ở chế độ chỉ đọc. `Library/`, phần còn lại của project và của máy vẫn bị chặn; không ghi, không mạng. Shell tool chỉ bật cho lượt có project; sandbox lỗi thì job lỗi, không rơi về profile đọc cả máy.
+    - Chỉ macOS (đã thử với codex-cli 0.165.0). Timeout riêng `CODEX_PROJECT_TIMEOUT_SECONDS` = 600 s.
+    - → Feature 03a có thể dùng lại nguyên cơ chế này (chọn project + chọn thư mục + sandbox); chỉ cần prompt và schema đầu ra riêng.
 - **Clear All Data** phải được cập nhật để xóa cả dữ liệu mới (project, tài liệu, requirement…).
 - **Hạn mức Codex** theo gói ChatGPT: phân tích GDD dài và quét project lớn sẽ tốn usage → cần chia nhỏ, cache kết quả, chỉ phân tích lại phần thay đổi.
 
@@ -110,7 +114,7 @@ Nguyên tắc:
 ### Feature 03 — AI Project Scanner (đề xuất chia 2 bước)
 
 **3a. Quét file trên đĩa (làm trước, không cần Unity mở)**
-- Người dùng chọn thư mục project → backend đọc **chỉ thư mục `Assets/`** (bỏ qua Library, Temp, Plugins/ThirdParty theo danh sách cho phép).
+- Người dùng chọn thư mục project → backend đọc **chỉ thư mục `Assets/`** (bỏ qua Library, Temp, Plugins/ThirdParty theo danh sách cho phép). *Đã có:* chọn project + tick thư mục + sandbox chỉ đọc (xem mục 3).
 - Đọc C# scripts, file `.unity` / `.prefab` / `.asset` dạng YAML (cần project bật *Force Text serialization*).
 - Codex được quyền **đọc** thư mục project (read-only, không mạng) để tìm bằng chứng cho từng requirement, trả về đường dẫn + số dòng + trích đoạn; backend xác minh lại.
 

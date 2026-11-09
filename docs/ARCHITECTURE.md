@@ -115,7 +115,7 @@ videos ──< analysis_sessions (reference_video_id, current_video_id) ──< 
    fresh temp folder with labelled names (`01_R1_reference_10000ms.jpg`), builds the prompt (`services/ai/prompt.py`)
    and runs `codex exec` locked down (see README → Security restrictions). Prompt on stdin, answer from
    `--output-last-message`, shape enforced by `--output-schema`.
-3. The answer is parsed with Pydantic (`AIAnalysisOutput`); issues with a wrong pair id or duplicates are dropped,
+3. The answer is parsed with Pydantic (`AIAnalysisOutput`); issues with a wrong pair id or duplicates are dropped (at most 20 per pair),
    timestamps are snapped to the frames that were actually sent, evidence labels are mapped to `extracted_media` ids,
    and `feedback_items` rows are stored with backend-generated ids. The job ends `completed` or `failed` (error code +
    message). Jobs still active at startup are marked `failed` / `interrupted`.
