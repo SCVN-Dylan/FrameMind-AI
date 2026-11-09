@@ -1,6 +1,6 @@
 # FrameMind AI — Portable (Windows 10 / 11)
 
-The same ZIP runs on macOS and Windows. On Windows, use **`Start FrameMind.bat`**. The page is a single local file (`submission\index.html`), the backend listens only on `127.0.0.1`, and AI analysis uses **your** ChatGPT account through the official Codex CLI.
+The same ZIP runs on macOS and Windows. On Windows, use **`Start FrameMind.bat`**. The page is a single local file (`index.html`), the backend listens only on `127.0.0.1`, and AI analysis uses **your** ChatGPT account through the official Codex CLI.
 
 ## Quick start
 

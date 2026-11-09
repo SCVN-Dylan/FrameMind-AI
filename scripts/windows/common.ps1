@@ -25,7 +25,7 @@ $PairingFile = Join-Path $DataDir 'standalone_pairing_code.txt'
 
 $BackendDir = Join-Path $AppDir 'backend'
 $Requirements = Join-Path $BackendDir 'requirements.txt'
-$IndexHtml = Join-Path $AppDir 'submission\index.html'
+$IndexHtml = Join-Path $AppDir 'index.html'
 
 $AppName = 'FrameMind AI'
 $DefaultPort = 8000

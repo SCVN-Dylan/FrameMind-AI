@@ -182,7 +182,7 @@ _Last updated: 2026-11-09_
 
 ### Milestone 09 — Standalone HTML frontend (2026-10-29)
 
-- [x] `submission/index.html` (≈260 KB, one file, no external resources, strict CSP): Dashboard (real stats from saved
+- [x] `index.html` (≈260 KB, one file, no external resources, strict CSP): Dashboard (real stats from saved
       sessions), New Analysis (players, timelines, Single Frame / Short Clip pairs with the app's rules, offline Canvas
       frame extraction, backend extraction, Codex analysis, job card, feedback timeline and cards), History, Settings
       (backend address, pairing, Codex status/login/logout/model, language); EN/VI/KO; responsive with mobile drawer

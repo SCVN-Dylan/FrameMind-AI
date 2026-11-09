@@ -10,7 +10,7 @@
 <!--
   FrameMind AI — product introduction page.
   One self-contained file: no external fonts, scripts, images or requests. Open it by double-clicking.
-  Every claim on this page follows docs/PROGRESS.md, docs/ROADMAP.md and submission/index.html (2026-10-30).
+  Every claim on this page follows docs/PROGRESS.md, docs/ROADMAP.md and index.html (2026-10-30).
 -->
 <style>
 :root {
@@ -35,7 +35,7 @@
   --shadow: 0 2px 6px rgba(21,19,43,.04), 0 12px 32px rgba(54,38,120,.08);
   --shadow-lg: 0 4px 12px rgba(21,19,43,.06), 0 30px 70px rgba(54,38,120,.16);
   --radius: 20px;
-  /* App (mockup) palette, copied from submission/index.html */
+  /* App (mockup) palette, copied from index.html */
   --a-bg: #10101e; --a-surface: #19192c; --a-raised: #212137; --a-border: #37334f;
   --a-fg: #f5f3ff; --a-muted: #9994b5; --a-ref: #a78bfa; --a-cur: #3b82f6;
   --sev-critical: #f43f5e; --sev-major: #fb923c; --sev-minor: #fde68a; --sev-suggestion: #38bdf8;
@@ -150,7 +150,7 @@ section { position: relative; padding: 112px 0; }
 @media (max-width: 1140px) { .fc-1 { left: 8px; top: -22px; } .fc-2 { right: 8px; top: auto; bottom: -24px; } }
 @media (max-width: 640px) { .float-chip { display: none; } }
 
-/* ---------- App mockups (dark, mirrors submission/index.html) ---------- */
+/* ---------- App mockups (dark, mirrors index.html) ---------- */
 .app { position: relative; z-index: 2; border-radius: 18px; background: var(--a-bg); color: var(--a-fg); border: 1px solid #2a2742; box-shadow: var(--shadow-lg); overflow: hidden; font-size: 12.5px; line-height: 1.45; text-align: left; }
 .app-bar { display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 14px; background: #15152a; border-bottom: 1px solid #262340; }
 .app-bar i { width: 11px; height: 11px; border-radius: 50%; background: #3a3654; }
@@ -629,7 +629,7 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
 <body>
 <script>document.documentElement.classList.add("js");</script>
 
-<!-- Icon sprite: paths copied from the app's icon set (submission/index.html → ICON_PATHS) plus a few extras -->
+<!-- Icon sprite: paths copied from the app's icon set (index.html → ICON_PATHS) plus a few extras -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
     <linearGradient id="flowGrad" gradientUnits="userSpaceOnUse" x1="6" x2="72" y1="0" y2="0"><stop offset="0" stop-color="#7c3aed"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
@@ -782,7 +782,7 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
       <div class="float-chip fc-2"><span class="fi" style="background:#fb923c"><svg class="ic"><use href="#i-camera"/></svg></span><span><b>Camera · Major</b>Suggested Unity fix included</span></div>
 
       <div class="app" role="img" aria-label="Recreation of the FrameMind AI New Analysis screen: reference and current gameplay side by side with timelines, analysis modes and a feedback card">
-        <div class="app-bar"><i></i><i></i><i></i><div class="url"><svg class="ic"><use href="#i-lock"/></svg>file:// … /FrameMind-Portable/submission/index.html</div></div>
+        <div class="app-bar"><i></i><i></i><i></i><div class="url"><svg class="ic"><use href="#i-lock"/></svg>file:// … /FrameMind-Portable/index.html</div></div>
         <div class="app-body">
           <aside class="app-side">
             <div class="app-logo"><span><svg class="ic"><use href="#i-logo"/></svg></span><span>FrameMind AI</span></div>
@@ -1300,7 +1300,7 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
     </div>
     <div class="arch">
       <div class="card node reveal from-left">
-        <div class="nh"><span class="ni"><svg class="ic"><use href="#i-browser"/></svg></span><div><h4>Standalone page</h4><small>submission/index.html</small></div></div>
+        <div class="nh"><span class="ni"><svg class="ic"><use href="#i-browser"/></svg></span><div><h4>Standalone page</h4><small>index.html</small></div></div>
         <ul><li>One HTML file, opened by double-click (file://)</li><li>Vanilla JavaScript, strict Content-Security-Policy, no CDN</li><li>Players, timelines, pairs and Canvas frame extraction work offline</li><li>A Next.js 16 + React version exists for development</li></ul>
       </div>
       <div class="wire-wrap reveal" style="--d:.15s" aria-hidden="true"><div class="wire-lbl">HTTP + pairing code</div><div class="wire"></div></div>
@@ -1416,7 +1416,7 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
           <ul id="finderList">
             <li class="dir"><svg class="ic"><use href="#i-box"/></svg>backend</li>
             <li class="dir"><svg class="ic"><use href="#i-box"/></svg>scripts</li>
-            <li class="dir"><svg class="ic"><use href="#i-box"/></svg>submission</li>
+            <li><svg class="ic"><use href="#i-browser"/></svg>index.html</li>
             <li><svg class="ic"><use href="#i-info"/></svg>README.md</li>
             <li><svg class="ic"><use href="#i-info"/></svg>README-Windows.md</li>
             <li><svg class="ic"><use href="#i-browser"/></svg>service-intro.html</li>
@@ -1428,7 +1428,7 @@ footer { border-top: 1px solid var(--line); padding: 30px 0 40px; color: var(--m
         </div>
         <div class="card side-card"><svg class="ic"><use href="#i-pause"/></svg><div><h4>Stopping</h4><p>Press <kbd>Ctrl</kbd> + <kbd>C</kbd> in the launcher window, close the window, or double-click <b>Stop FrameMind</b>.</p></div></div>
         <div class="card side-card"><svg class="ic"><use href="#i-database"/></svg><div><h4>Where your data is saved</h4><p>Outside the app folder, so moving or replacing the folder keeps your sessions:</p><p class="mono">~/Library/Application Support/FrameMind AI</p><p class="mono">%LOCALAPPDATA%\FrameMind AI</p></div></div>
-        <div class="card side-card"><svg class="ic"><use href="#i-eye"/></svg><div><h4>Just want to look around?</h4><p>Open <b>submission/index.html</b> directly to load videos and match moments offline — no installation, but no saving and no AI.</p></div></div>
+        <div class="card side-card"><svg class="ic"><use href="#i-eye"/></svg><div><h4>Just want to look around?</h4><p>Open <b>index.html</b> directly to load videos and match moments offline — no installation, but no saving and no AI.</p></div></div>
       </div>
     </div>
   </div>
@@ -1735,7 +1735,7 @@ var I18N = {
 "Where your data is saved": "Dữ liệu được lưu ở đâu",
 "Outside the app folder, so moving or replacing the folder keeps your sessions:": "Nằm ngoài thư mục ứng dụng, nên di chuyển hay thay thư mục vẫn giữ nguyên các phiên:",
 "Just want to look around?": "Chỉ muốn xem thử?",
-"Open <b>submission/index.html<\/b> directly to load videos and match moments offline — no installation, but no saving and no AI.": "Mở trực tiếp <b>submission/index.html<\/b> để mở video và ghép khoảnh khắc offline — không cần cài đặt, nhưng không lưu dữ liệu và không có AI."
+"Open <b>index.html<\/b> directly to load videos and match moments offline — no installation, but no saving and no AI.": "Mở trực tiếp <b>index.html<\/b> để mở video và ghép khoảnh khắc offline — không cần cài đặt, nhưng không lưu dữ liệu và không có AI."
 },
 "ko": {
 "Problem": "문제",
@@ -2007,7 +2007,7 @@ var I18N = {
 "Where your data is saved": "데이터 저장 위치",
 "Outside the app folder, so moving or replacing the folder keeps your sessions:": "앱 폴더 밖에 저장되므로 폴더를 옮기거나 교체해도 세션이 유지됩니다:",
 "Just want to look around?": "그냥 둘러보고 싶다면?",
-"Open <b>submission/index.html<\/b> directly to load videos and match moments offline — no installation, but no saving and no AI.": "<b>submission/index.html<\/b>을 바로 열어 오프라인으로 영상을 불러오고 장면을 매칭할 수 있습니다. 설치는 필요 없지만 저장과 AI는 사용할 수 없습니다."
+"Open <b>index.html<\/b> directly to load videos and match moments offline — no installation, but no saving and no AI.": "<b>index.html<\/b>을 바로 열어 오프라인으로 영상을 불러오고 장면을 매칭할 수 있습니다. 설치는 필요 없지만 저장과 AI는 사용할 수 없습니다."
 }
 };
 </script>
@@ -2234,7 +2234,7 @@ var I18N = {
     render();
   })();
 
-  /* ---------- Feature G: real EN / VI / KO strings from submission/index.html ---------- */
+  /* ---------- Feature G: real EN / VI / KO strings from index.html ---------- */
   (function () {
     var root = $("#demoG"); if (!root) return;
     var dict = {

@@ -11,15 +11,15 @@ ZIP="$DIST/$NAME.zip"
 
 die() { printf 'build_portable: %s\n' "$*" >&2; exit 1; }
 
-[ -f "$REPO/submission/index.html" ] || die "submission/index.html is missing."
+[ -f "$REPO/index.html" ] || die "index.html is missing."
 [ -f "$REPO/backend/requirements.txt" ] || die "backend/requirements.txt is missing."
 
 rm -rf "$STAGE" "$ZIP"
-mkdir -p "$STAGE/submission" "$STAGE/backend" "$STAGE/scripts/windows" || die "cannot create $STAGE"
+mkdir -p "$STAGE/backend" "$STAGE/scripts/windows" || die "cannot create $STAGE"
 
 cp "$REPO/Start FrameMind.command" "$REPO/Stop FrameMind.command" "$STAGE/"
 cp "$REPO/Start FrameMind.bat" "$REPO/Stop FrameMind.bat" "$STAGE/"
-cp "$REPO/submission/index.html" "$STAGE/submission/"
+cp "$REPO/index.html" "$STAGE/"
 cp "$REPO/service-intro.html" "$STAGE/"  # product introduction page (self-contained)
 cp "$REPO/backend/requirements.txt" "$STAGE/backend/"
 rsync -a --exclude '__pycache__/' --exclude '*.pyc' --exclude '.DS_Store' "$REPO/backend/app" "$STAGE/backend/"

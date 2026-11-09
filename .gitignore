@@ -21,7 +21,7 @@ storage/frames/*
 !storage/videos/.gitkeep
 !storage/frames/.gitkeep
 storage/*.db
-# Local secret for the standalone page (submission/index.html)
+# Local secret for the standalone page (index.html)
 storage/standalone_pairing_code.txt
 
 # --- OS / editors ---

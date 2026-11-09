@@ -48,7 +48,7 @@ check_macos() {
 check_package_files() {
   local missing=0
   if [ ! -f "$INDEX_HTML" ]; then
-    error "The FrameMind AI page is missing: submission/index.html" \
+    error "The FrameMind AI page is missing: index.html" \
       "The app folder is incomplete. Extract FrameMind-Portable.zip again."
     missing=1
   fi

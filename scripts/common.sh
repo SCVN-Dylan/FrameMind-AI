@@ -22,7 +22,7 @@ PAIRING_FILE="$DATA_DIR/standalone_pairing_code.txt"
 
 BACKEND_DIR="$APP_DIR/backend"
 REQUIREMENTS="$BACKEND_DIR/requirements.txt"
-INDEX_HTML="$APP_DIR/submission/index.html"
+INDEX_HTML="$APP_DIR/index.html"
 
 # Where Homebrew (Apple Silicon: /opt/homebrew, Intel: /usr/local) and its tools live. Overridable for tests.
 TOOL_DIRS="${FRAMEMIND_TOOL_DIRS:-/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/usr/local/sbin}"
@@ -304,7 +304,7 @@ stop_owned_backend() {
 
 # --- Opening the page ------------------------------------------------------------------------------------
 # `open` drops the #fragment of file:// URLs, so the page is opened through a tiny private helper page in
-# the data folder, which hands the backend address and pairing code to submission/index.html:
+# the data folder, which hands the backend address and pairing code to index.html:
 #   - "redirect" (Chrome, Firefox, …): forwards to index.html#pairing=…&api=… (the page then cleans its URL).
 #   - "storage" (Safari): Safari blocks scripted file:// → file:// navigation, but its file:// pages share
 #     localStorage. The helper saves both values there and closes itself; the launcher then opens index.html.

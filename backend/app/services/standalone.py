@@ -1,4 +1,4 @@
-"""Pairing for the standalone frontend (submission/index.html opened with file://).
+"""Pairing for the standalone frontend (index.html opened with file://).
 
 Pages opened from disk send `Origin: null`. So do sandboxed iframes on any website, so the origin alone can't tell
 FrameMind's own page from an unrelated site. Requests with `Origin: null` must therefore carry a pairing code that

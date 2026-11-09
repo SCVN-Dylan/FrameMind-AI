@@ -49,7 +49,7 @@ framemind-ai/
 │   │       └── ai/           codex_cli.py (CodexCLIService), codex_account.py (login/logout/models), prompt.py
 │   ├── tests/                pytest tests
 │   └── requirements.txt
-├── submission/index.html     Standalone single-file frontend (file://)
+├── index.html     Standalone single-file frontend (file://)
 ├── scripts/                  macOS launcher (common, check_dependencies, setup, start/stop_backend),
 │                             build_portable.sh, tests/test_launcher.sh
 ├── Start FrameMind.command   One-click launcher (Stop FrameMind.command stops it)
@@ -171,7 +171,7 @@ values stay English. `add_missing_columns()` in `db/database.py` adds such new c
 
 ### Standalone page (Milestone 09)
 
-`submission/index.html` is a second frontend: one file, vanilla JavaScript, opened with `file://`. It reuses the same
+`index.html` is a second frontend: one file, vanilla JavaScript, opened with `file://`. It reuses the same
 API contracts as `frontend/src/lib/api.ts` (videos, sessions, pairs, extraction, analysis, ai/provider). Video
 playback uses native `<video>`; offline frame previews use Canvas on local object URLs; real analysis frames still
 come from the backend's FFmpeg extraction. The page polls `/api/health` and one paired endpoint to show Offline /
@@ -197,7 +197,7 @@ Backend side: `Origin: null` is allowed by CORS only together with the `X-FrameM
   (mode 600). For Chrome/others it saves the values to localStorage and redirects to
   `index.html#pairing=…&api=…`. Safari blocks scripted file:// → file:// navigation, so its helper only saves to
   localStorage and closes; the launcher then opens `index.html` itself, and the page also listens for `storage` events.
-- **Package:** `scripts/build_portable.sh` copies only runtime files (launcher, `submission/index.html`, `backend/app`,
+- **Package:** `scripts/build_portable.sh` copies only runtime files (launcher, `index.html`, `backend/app`,
   `backend/requirements.txt`, runtime scripts, `docs/PORTABLE.md` as README) and refuses private files.
 
 ### Clear All Data (Settings → Data Management)
@@ -220,7 +220,7 @@ Backend side: `Origin: null` is allowed by CORS only together with the `X-FrameM
 5. **Verify:** row counts must be 0 and the folders empty, else 500 `data_reset_incomplete`. Flags are always reset.
 
 Frontends (`components/settings/DataManagement.tsx` + `lib/clear-data.ts`, and the same flow in
-`submission/index.html`): typed `DELETE` confirmation → API → `GET /api/sessions` must be empty → remove `framemind*`
+`index.html`): typed `DELETE` confirmation → API → `GET /api/sessions` must be empty → remove `framemind*`
 keys from localStorage/sessionStorage except language (and, in the standalone page, backend address + pairing code)
 → reset in-memory state → Dashboard with the result. Network failure = offline: browser data only, with a warning.
 

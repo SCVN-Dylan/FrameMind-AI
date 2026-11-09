@@ -66,7 +66,7 @@ read_pid_file || fail "The backend started but its PID file is missing: $PID_FIL
 PID="$BACKEND_PID"
 PORT="$BACKEND_PORT"
 
-# 12: open submission/index.html (file://), already paired with this backend.
+# 12: open index.html (file://), already paired with this backend.
 step "Opening FrameMind AI"
 open_frontend "$PORT" || fail "The browser could not be opened."
 info "Pairing code (only needed if you open the page in another browser): $(tr -d '[:space:]' < "$PAIRING_FILE")"

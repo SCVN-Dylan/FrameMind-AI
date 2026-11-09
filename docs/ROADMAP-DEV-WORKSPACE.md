@@ -33,9 +33,9 @@ Mở rộng FrameMind AI từ "so sánh video gameplay" thành trợ lý giúp:
 
 ## 3. Hiện trạng kỹ thuật cần lưu ý trước khi làm
 
-- **Giao diện chính là `submission/index.html`**: một file HTML/JS thuần khoảng 4.500 dòng, mở bằng `file://`, chạy trong bản Portable.
+- **Giao diện chính là `index.html`**: một file HTML/JS thuần khoảng 4.500 dòng, mở bằng `file://`, chạy trong bản Portable.
   Thêm cả một Development Workspace vào file này sẽ khiến nó khó bảo trì.
-  → **Việc chuẩn bị nên làm trước:** tách trang thành nhiều file JS/CSS trong `submission/` (vẫn chạy offline, vẫn không cần CDN). Cần sửa CSP (`script-src`) cho phép file cục bộ.
+  → **Việc chuẩn bị nên làm trước:** tách trang thành nhiều file JS/CSS (ví dụ trong một thư mục `web/` cạnh `index.html`) (vẫn chạy offline, vẫn không cần CDN). Cần sửa CSP (`script-src`) cho phép file cục bộ.
 - **Bản Next.js trong `frontend/`** đang bị bỏ lại phía sau (nhiều tính năng gần đây chỉ làm ở trang standalone; riêng Unity project thì làm cả hai).
   → Cần quyết định: **ngừng cập nhật Next.js** hay giữ song song. Khuyến nghị: chỉ phát triển trang standalone.
 - **Backend FastAPI + SQLite**: thêm bảng bằng `create_all` + `ADDED_COLUMNS` (chỉ thêm, không xóa). Phù hợp để mở rộng.
@@ -162,7 +162,7 @@ Chỉ kết quả từ mức 1–3 đạt mới được tính **Verified**.
 
 | Bước | Nội dung | Ghi chú |
 | --- | --- | --- |
-| 0 | Chuẩn bị: tách `submission/index.html` thành nhiều file; quyết định về bản Next.js | Giảm rủi ro khi thêm giao diện lớn |
+| 0 | Chuẩn bị: tách `index.html` thành nhiều file; quyết định về bản Next.js | Giảm rủi ro khi thêm giao diện lớn |
 | 1 | **Feature 01**: Workspace + Import + Requirement Analyzer + Checklist | MVP, dùng được ngay |
 | 2 | Feature 06 (bản đơn giản): % tiến độ từ checklist thủ công | Gần như miễn phí sau bước 1 |
 | 3 | Feature 03a: quét file Assets trên đĩa | Chưa cần Unity package |

@@ -21,7 +21,7 @@ framemind-ai/
 ├── frontend/   Next.js web app (UI)
 ├── backend/    FastAPI server (API, database, video + AI services)
 ├── storage/    Local files: uploaded videos, extracted frames, SQLite DB
-├── submission/ Standalone single-file frontend (index.html)
+├── index.html  Standalone single-file frontend
 ├── scripts/    macOS launcher scripts, Windows launcher (scripts/windows), portable package builder, launcher tests
 ├── Start FrameMind.command / Stop FrameMind.command   one-click launcher (macOS)
 ├── Start FrameMind.bat / Stop FrameMind.bat           one-click launcher (Windows)
@@ -187,7 +187,7 @@ your own trusted machine. Keep this a personal local tool: do not expose the bac
 | Codex could not start its sandbox to read the Unity project | Pick *None: videos only* above Analyze, or update Codex |
 | Interrupted | The backend restarted during the run; run it again |
 
-## Standalone page (`submission/index.html`)
+## Standalone page (`index.html`)
 
 A single self-contained HTML file (all CSS, JavaScript and SVG icons inline; no CDN, no build, no Node.js) that
 mirrors the Next.js UI: Dashboard, New Analysis, History and Settings, in EN / VI / KO. Open it by double-clicking.
@@ -225,7 +225,7 @@ mirrors the Next.js UI: Dashboard, New Analysis, History and Settings, in EN / V
 3. Starts `uvicorn app.main:app` on `127.0.0.1:8000` with `STORAGE_DIR` set to that folder (database, videos, frames,
    pairing code, logs). A busy port is left alone and the next free one is used; an already-running backend started
    by the launcher is reused (verified by PID file + command line + listening port + `/api/health`).
-4. Opens `submission/index.html` (file://) in the default browser, already paired: Chrome & co. get
+4. Opens `index.html` (file://) in the default browser, already paired: Chrome & co. get
    `#pairing=…&api=…` through a private helper page; Safari, which blocks file-to-file redirects, gets the values
    through `localStorage` (shared by its file:// pages).
 5. Keeps running until Control-C, the window is closed, or `Stop FrameMind.command` — then stops only its own backend.

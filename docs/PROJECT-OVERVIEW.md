@@ -83,7 +83,7 @@ Người dùng đánh dấu các khoảnh khắc tương ứng giữa hai video,
 
 | Thành phần | Công nghệ |
 | --- | --- |
-| Giao diện chính (bản Portable) | `submission/index.html`: **một file HTML + JavaScript thuần** (~4.500 dòng), không framework, không CDN, mở bằng `file://`. Có CSP chặt (chỉ cho kết nối tới `localhost` / `127.0.0.1`). |
+| Giao diện chính (bản Portable) | `index.html`: **một file HTML + JavaScript thuần** (~4.500 dòng), không framework, không CDN, mở bằng `file://`. Có CSP chặt (chỉ cho kết nối tới `localhost` / `127.0.0.1`). |
 | Giao diện phụ (dev) | `frontend/`: **Next.js 16.4, React 19.3, Tailwind CSS 4, TypeScript 5**. Chạy ở `http://localhost:3000`. **Đang bị bỏ lại phía sau** so với trang standalone (một số tính năng mới chỉ có ở standalone); riêng Unity project thì cả hai bản đều có. |
 | Backend | **Python 3.9–3.13, FastAPI 0.128, Uvicorn 0.39, Pydantic Settings 2.11** |
 | Database | **SQLite** qua **SQLAlchemy 2.0** (file `framemind.db`) |
@@ -102,7 +102,7 @@ Không có: OpenAI API key, dịch vụ cloud, tài khoản người dùng, đ�
 FrameMind-AI/
 ├── Start FrameMind.command / .bat     launcher macOS / Windows
 ├── Stop FrameMind.command / .bat
-├── submission/index.html              giao diện chính (standalone)
+├── index.html              giao diện chính (standalone)
 ├── service-intro.html                 trang giới thiệu sản phẩm
 ├── frontend/                          bản Next.js (dev)
 │   └── src/app, src/components, src/lib (api, i18n, types…)
@@ -130,7 +130,7 @@ FrameMind-AI/
 ## 5. Kiến trúc & bảo mật
 
 ```
-Trình duyệt (submission/index.html, file://)
+Trình duyệt (index.html, file://)
         │  HTTP + header X-FrameMind-Pairing
         ▼
 FastAPI backend (chỉ nghe 127.0.0.1, cổng 8000 mặc định)

@@ -50,7 +50,7 @@ section "2. Package (ZIP) contents"
 ZIP="$WORK/dist/FrameMind-Portable.zip"
 LISTING="$(unzip -Z1 "$ZIP")"
 for wanted in "FrameMind-Portable/Start FrameMind.command" "FrameMind-Portable/Stop FrameMind.command" \
-  FrameMind-Portable/submission/index.html FrameMind-Portable/backend/requirements.txt FrameMind-Portable/backend/app/main.py \
+  FrameMind-Portable/index.html FrameMind-Portable/backend/requirements.txt FrameMind-Portable/backend/app/main.py \
   FrameMind-Portable/scripts/setup.sh FrameMind-Portable/scripts/start_backend.sh FrameMind-Portable/scripts/check_dependencies.sh \
   FrameMind-Portable/README.md; do
   check "ZIP contains $wanted" contains "$LISTING" "$wanted"
@@ -59,7 +59,7 @@ check "ZIP has no tests, venvs, node_modules, .env, databases, videos, git or ca
   sh -c '! printf "%s\n" "$1" | grep -E "tests/|venv|node_modules|\.env|\.db$|\.mp4$|\.mov$|\.git/|__pycache__|\.next/|frontend/|storage/|pairing_code|auth\.json|\._"' _ "$LISTING"
 mkdir -p "$APP_PARENT"
 (cd "$APP_PARENT" && ditto -x -k "$ZIP" .) || fail "extract ZIP"
-check "extracted to a path with spaces" test -f "$APP/submission/index.html"
+check "extracted to a path with spaces" test -f "$APP/index.html"
 check "executable bit kept in ZIP (Start)" test -x "$APP/Start FrameMind.command"
 check "executable bit kept in ZIP (scripts)" test -x "$APP/scripts/start_backend.sh"
 
@@ -181,11 +181,11 @@ check "partial approval: declined Python stays missing (exit 1)" test "$STATUS" 
 check "partial approval: only the approved FFmpeg was installed" \
   sh -c 'grep -qx "brew install ffmpeg" "$1" && ! grep -q "python@3.12\|--cask codex" "$1"' _ "$SANDBOX/calls.log"
 
-mv "$APP/submission/index.html" "$APP/submission/index.html.bak"
+mv "$APP/index.html" "$APP/index.html.bak"
 OUT="$(run_deps "")"; STATUS=$?
-mv "$APP/submission/index.html.bak" "$APP/submission/index.html"
+mv "$APP/index.html.bak" "$APP/index.html"
 check "missing index.html is reported (exit 2)" sh -c '[ "$1" = 2 ]' _ "$STATUS"
-check "missing index.html message" contains "$OUT" "submission/index.html"
+check "missing index.html message" contains "$OUT" "index.html"
 
 # Yes/No questions: a dialog when stdin is a terminal (`script` provides one here, with a fake osascript),
 # the terminal question when no dialog can be shown.
@@ -275,8 +275,8 @@ check "CORS allows the file:// page" contains "$CORS" "access-control-allow-orig
 FRAMEMIND_OPEN_BROWSER=0 /bin/bash -c 'APP_DIR="$1"; . "$1/scripts/common.sh"; open_frontend "$2"' _ "$APP" "$PORT" >/dev/null 2>&1
 check "page opener is private (600)" test "$(stat -f %Lp "$DATA/run/open-framemind.html")" = 600
 OPENER="$(cat "$DATA/run/open-framemind.html")"
-INDEX_URI="$("$VENV_PY" -c 'import pathlib, sys; print(pathlib.Path(sys.argv[1]).as_uri())' "$APP/submission/index.html")"
-check "opener points to submission/index.html (file://, spaces encoded)" contains "$OPENER" "$INDEX_URI#pairing=$CODE&api=http%3A%2F%2F127.0.0.1%3A$PORT"
+INDEX_URI="$("$VENV_PY" -c 'import pathlib, sys; print(pathlib.Path(sys.argv[1]).as_uri())' "$APP/index.html")"
+check "opener points to index.html (file://, spaces encoded)" contains "$OPENER" "$INDEX_URI#pairing=$CODE&api=http%3A%2F%2F127.0.0.1%3A$PORT"
 check "opener also saves address and code to localStorage" contains "$OPENER" "localStorage.setItem(\"framemind-standalone-pairing\", \"$CODE\")"
 /bin/bash -c 'APP_DIR="$1"; . "$1/scripts/common.sh"; write_open_page "$2" storage' _ "$APP" "$PORT"
 OPENER="$(cat "$DATA/run/open-framemind.html")"

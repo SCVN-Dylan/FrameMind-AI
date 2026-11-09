@@ -1,6 +1,6 @@
 # FrameMind AI — Portable (macOS)
 
-FrameMind AI compares a **Reference** and a **Current** gameplay video and gives AI feedback on matched frames or short clips. Everything runs on your Mac. The page is a single local file (`submission/index.html`), the backend listens only on `127.0.0.1`, and AI analysis uses **your** ChatGPT account through the official Codex CLI.
+FrameMind AI compares a **Reference** and a **Current** gameplay video and gives AI feedback on matched frames or short clips. Everything runs on your Mac. The page is a single local file (`index.html`), the backend listens only on `127.0.0.1`, and AI analysis uses **your** ChatGPT account through the official Codex CLI.
 
 On Windows, use `Start FrameMind.bat` and see `README-Windows.md`.
 
